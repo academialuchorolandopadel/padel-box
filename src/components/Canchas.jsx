@@ -1,7 +1,7 @@
 import React from "react";
-import { Check, Clock, Plus, Repeat, RotateCcw, StickyNote, Trash2 } from "lucide-react";
+import { Check, Clock, Minus, Plus, Repeat, RotateCcw, StickyNote, Trash2 } from "lucide-react";
 import { S } from "../styles";
-import { BOXES, GS, PAGOS, horasEntre, perPart, totalCuenta } from "../constants";
+import { BOXES, GS, PAGOS, horasEntre, perPart, sumarMinutos, textoDuracion, totalCuenta } from "../constants";
 import { Stepper } from "./ui";
 
 export default function Canchas(props) {
@@ -62,10 +62,18 @@ function TurnoCard({ turno, cuentas, fijos, onUpdTurno, onBorrarTurno, onReparti
       <div style={S.turnoHead}>
         <div style={S.turnoHeadL}>
           <Clock size={16} color="#5fe0a1" />
-          <input type="time" value={turno.horaInicio} onChange={(e) => onUpdTurno(turno, { horaInicio: e.target.value }, lista)} style={S.timeInput} />
-          <span style={{ color: "#5a606b", fontWeight: 700 }}>a</span>
-          <input type="time" value={turno.horaFin} onChange={(e) => onUpdTurno(turno, { horaFin: e.target.value }, lista)} style={S.timeInput} />
-          <span style={S.turnoMeta}>{horas} h</span>
+          <div style={S.horaCtl}>
+            <span style={S.horaLbl}>Empieza</span>
+            <button style={S.horaBtn} onClick={() => onUpdTurno(turno, { horaInicio: sumarMinutos(turno.horaInicio, -30), horaFin: sumarMinutos(turno.horaFin, -30) }, lista)}><Minus size={16} /></button>
+            <span style={S.horaVal}>{turno.horaInicio}</span>
+            <button style={S.horaBtn} onClick={() => onUpdTurno(turno, { horaInicio: sumarMinutos(turno.horaInicio, 30), horaFin: sumarMinutos(turno.horaFin, 30) }, lista)}><Plus size={16} /></button>
+          </div>
+          <div style={S.horaCtl}>
+            <span style={S.horaLbl}>Dura</span>
+            <button style={S.horaBtn} onClick={() => { const nf = sumarMinutos(turno.horaInicio, Math.max(30, Math.round(horas * 60) - 30)); onUpdTurno(turno, { horaFin: nf }, lista); }}><Minus size={16} /></button>
+            <span style={S.horaVal}>{textoDuracion(horas)}</span>
+            <button style={S.horaBtn} onClick={() => { const nf = sumarMinutos(turno.horaInicio, Math.round(horas * 60) + 30); onUpdTurno(turno, { horaFin: nf }, lista); }}><Plus size={16} /></button>
+          </div>
           {esFijo && <span style={S.tagFijo}><Repeat size={12} /> Fijo · {fijo?.clienteNombre || "—"}</span>}
         </div>
         <div style={S.turnoHeadR}>
