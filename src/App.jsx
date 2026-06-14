@@ -165,7 +165,7 @@ function Sistema({ perfil }) {
             onUsar={async (f) => { await svcFijos.usarFijo(f); setActiveBox(f.boxId); setTab("canchas"); }} />
         )}
         {tab === "clientes" && <Clientes clientes={clientes} onVer={setVerCliente} />}
-        {tab === "stock" && <Stock productos={productos} onReponer={svcVarios.reponerStock} />}
+        {tab === "stock" && <Stock productos={productos} onReponer={svcVarios.reponerStock} onCrear={svcVarios.crearProducto} onActualizar={svcVarios.actualizarProducto} onBorrar={svcVarios.borrarProducto} esAdmin={esAdmin} />}
         {tab === "gastos" && <Gastos gastos={gastos} onAgregar={svcVarios.crearGasto} onBorrar={svcVarios.borrarGasto} esAdmin={esAdmin} />}
         {tab === "caja" && <Caja cerradasHoy={cerradasHoy} abiertas={abiertas} gastosHoy={gastos.filter((g) => g.fecha === hoy)} onEdit={setEditing} />}
         {tab === "reportes" && esAdmin && <Reportes gastos={gastos} />}
