@@ -37,6 +37,7 @@ export default function Clientes({ clientes, onVer }) {
 }
 
 export function ClienteDetalle({ cliente, onUpd, onClose }) {
+  const [nombre, setNombre] = useState(cliente.nombre || "");
   const [notas, setNotas] = useState(cliente.notas || "");
   const [telefono, setTelefono] = useState(cliente.telefono || "");
   const [nuevoPend, setNuevoPend] = useState("");
@@ -69,7 +70,7 @@ export function ClienteDetalle({ cliente, onUpd, onClose }) {
     return Object.entries(m).map(([n, c]) => ({ n, c })).sort((a, b) => b.c - a.c).slice(0, 5);
   }, [historial]);
 
-  const guardar = () => onUpd(cliente.id, { notas, telefono });
+  const guardar = () => onUpd(cliente.id, { nombre: nombre.trim() || cliente.nombre, notas, telefono });
   const addPend = () => {
     if (!nuevoPend.trim()) return;
     onUpd(cliente.id, { pendientes: [...(cliente.pendientes || []), { id: crypto.randomUUID(), descripcion: nuevoPend.trim(), cantidad: 1 }] });
@@ -84,9 +85,10 @@ export function ClienteDetalle({ cliente, onUpd, onClose }) {
     <div style={S.overlay} onClick={() => { guardar(); onClose(); }}>
       <div style={{ ...S.modal, width: "min(720px,100%)" }} onClick={(e) => e.stopPropagation()}>
         <div style={S.modalHead}>
-          <div>
-            <div style={S.modalSub}>Cliente desde {cliente.creado ? new Date(cliente.creado).toLocaleDateString("es-PY") : "—"}</div>
-            <div style={{ fontSize: 21, fontWeight: 800 }}>{cliente.nombre}</div>
+          <div style={{ flex: 1 }}>
+            <div style={S.modalSub}>Cliente desde {cliente.creado ? new Date(cliente.creado).toLocaleDateString("es-PY") : "—"} · tocá el nombre para corregirlo</div>
+            <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre y apellido"
+              style={{ background: "transparent", border: "none", borderBottom: "1.5px solid #2a313c", color: "#fff", fontSize: 21, fontWeight: 800, outline: "none", width: "100%", padding: "2px 0" }} />
           </div>
           <button style={S.iconBtn} onClick={() => { guardar(); onClose(); }}><X size={20} /></button>
         </div>
