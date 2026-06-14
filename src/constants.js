@@ -31,6 +31,26 @@ export const horasEntre = (ini, fin) => {
   const [h2, m2] = fin.split(":").map(Number);
   return Math.max(0, (h2 * 60 + m2 - (h1 * 60 + m1)) / 60);
 };
+// Suma (o resta) minutos a una hora "HH:MM" y devuelve "HH:MM" (se queda dentro de 00:00–23:59)
+export const sumarMinutos = (hora, mins) => {
+  const [h, m] = hora.split(":").map(Number);
+  let t = h * 60 + m + mins;
+  t = Math.max(0, Math.min(23 * 60 + 59, t));
+  const hh = String(Math.floor(t / 60)).padStart(2, "0");
+  const mm = String(t % 60).padStart(2, "0");
+  return `${hh}:${mm}`;
+};
+
+// Texto lindo de duración: 1.5 -> "1 h 30 min", 2 -> "2 h", 0.5 -> "30 min"
+export const textoDuracion = (horas) => {
+  const total = Math.round(horas * 60);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h} h`;
+  return `${h} h ${m} min`;
+};
+
 export const perPart = (total, partes) => (partes > 0 ? total / partes : 0);
 export const calcCargo = (partes, total, partesTotal) =>
   Math.round((partes || 0) * perPart(total, partesTotal));
