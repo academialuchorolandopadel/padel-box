@@ -82,7 +82,7 @@ function TurnoCard({ turno, cuentas, fijos, onUpdTurno, onBorrarTurno, onReparti
             : <span style={S.tagDebe}>Falta cobrar {GS(pendiente)}</span>)}
           <button style={S.iconBtnSm} title="Borrar turno" onClick={() => {
             if (lista.some((c) => c.estado === "cerrada")) { alert("Este turno tiene cobros hechos. Reabrí o borrá las cuentas primero."); return; }
-            if (confirm("¿Borrar este turno y sus cuentas?")) onBorrarTurno(turno.id, lista);
+            if (confirm("¿Borrar este turno y sus cuentas?")) onBorrarTurno(turno.id);
           }}><Trash2 size={16} /></button>
         </div>
       </div>
