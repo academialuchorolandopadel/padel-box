@@ -1,5 +1,5 @@
 import {
-  addDoc, collection, deleteDoc, doc, updateDoc, writeBatch,
+  addDoc, collection, deleteDoc, doc, getDocs, query, updateDoc, where, writeBatch,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { calcCargo, horasEntre, hoyISO } from "../constants";
@@ -55,10 +55,14 @@ export const repartirParejo = async (turno, campo, cuentasDelTurno) => {
 };
 
 /** Borra el turno junto con sus cuentas (solo usar si no hay nada cobrado). */
-export const borrarTurno = async (turnoId, cuentasDelTurno) => {
+/** Borra el turno junto con TODAS sus cuentas. Consulta Firestore en el momento
+ *  (no depende de lo que la pantalla tenga cargado), así nunca quedan cuentas
+ *  huérfanas aunque se borre el turno apenas creado. */
+export const borrarTurno = async (turnoId) => {
+  const snap = await getDocs(query(collection(db, "cuentas"), where("turnoId", "==", turnoId)));
   const batch = writeBatch(db);
   batch.delete(doc(db, "turnos", turnoId));
-  cuentasDelTurno.forEach((c) => batch.delete(doc(db, "cuentas", c.id)));
+  snap.docs.forEach((d) => batch.delete(d.ref));
   await batch.commit();
 };
 
