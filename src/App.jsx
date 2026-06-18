@@ -142,7 +142,7 @@ function Sistema({ perfil }) {
               turnos={turnos} cuentas={cuentas} fijos={fijos}
               onNuevoTurno={(boxId) => svcTurnos.crearTurno(boxId, config)}
               onUpdTurno={(turno, patch, lista) => svcTurnos.actualizarTurno(turno, patch, lista, config)}
-              onBorrarTurno={(turnoId, lista) => svcTurnos.borrarTurno(turnoId, lista)}
+              onBorrarTurno={(turnoId) => svcTurnos.borrarTurno(turnoId)}
               onRepartir={(turno, campo, lista) => svcTurnos.repartirParejo(turno, campo, lista)}
               onSetPartes={(cuenta, campo, delta, turno) => svcCuentas.cambiarPartes(cuenta, campo, delta, turno)}
               onPickFijo={() => setPickFijo(true)}
