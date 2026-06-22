@@ -41,12 +41,19 @@ export const usarFijo = async (fijo, horasSesion) => {
 
   const batch = writeBatch(db);
 
-  // 1) turno prepago en el horario fijo
+  // obsequios del paquete -> se guardan DENTRO del turno (no en el cliente),
+  // con cuánto falta entregar de cada uno. El cajero los entrega desde el turno.
+  const obsequios = (fijo.obsequios || [])
+    .filter((o) => o.cantidad > 0)
+    .map((o) => ({ productoId: o.productoId, nombre: o.nombre, cantidad: Number(o.cantidad) }));
+
+  // 1) turno prepago en el horario fijo, con sus obsequios
   const turnoRef = doc(collection(db, "turnos"));
   batch.set(turnoRef, {
     boxId: fijo.boxId, fecha: hoyISO(), horaInicio, horaFin,
     fijoId: fijo.id, canchaTotal: 0, canchaPartes: 1,
     tuboActivo: false, tuboPrecio: 0, tuboPartes: 1, tuboGratis: false,
+    obsequios,
     creadoTs: Date.now(),
   });
 
@@ -56,21 +63,30 @@ export const usarFijo = async (fijo, horasSesion) => {
     ...(restante <= 0 ? { estado: "completado" } : {}),
   });
 
-  // 3) obsequios -> pendientes del cliente (si tiene clienteId y hay obsequios)
-  const obs = (fijo.obsequios || []).filter((o) => o.cantidad > 0);
-  if (fijo.clienteId && obs.length > 0) {
-    const cliSnap = await getDoc(doc(db, "clientes", fijo.clienteId));
-    if (cliSnap.exists()) {
-      const previos = cliSnap.data().pendientes || [];
-      const nuevos = obs.map((o) => ({
-        id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())),
-        descripcion: o.nombre,
-        cantidad: o.cantidad,
-        deFijo: true,
-      }));
-      batch.update(doc(db, "clientes", fijo.clienteId), { pendientes: [...previos, ...nuevos] });
+  await batch.commit();
+};
+
+/* Entrega UN obsequio del turno: baja en 1 lo que falta entregar y descuenta
+   1 unidad del stock del producto. Todo junto para no descuadrar. */
+export const entregarObsequio = async (turno, productoId) => {
+  const obsequios = (turno.obsequios || [])
+    .map((o) => (o.productoId === productoId ? { ...o, cantidad: o.cantidad - 1 } : o))
+    .filter((o) => o.cantidad > 0);
+
+  const batch = writeBatch(db);
+  batch.update(doc(db, "turnos", turno.id), { obsequios });
+
+  const pSnap = await getDoc(doc(db, "productos", productoId));
+  if (pSnap.exists()) {
+    const p = pSnap.data();
+    // si el obsequio es una promo, descuenta del producto base; si no, de sí mismo
+    if (p.descuentaId && p.descuentaCant) {
+      const bSnap = await getDoc(doc(db, "productos", p.descuentaId));
+      if (bSnap.exists())
+        batch.update(doc(db, "productos", p.descuentaId), { stockActual: (bSnap.data().stockActual ?? 0) - p.descuentaCant });
+    } else if (p.categoria !== "Servicio") {
+      batch.update(doc(db, "productos", productoId), { stockActual: (p.stockActual ?? 0) - 1 });
     }
   }
-
   await batch.commit();
 };
