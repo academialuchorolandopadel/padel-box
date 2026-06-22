@@ -18,6 +18,8 @@ export const crearProducto = (p) =>
   addDoc(collection(db, "productos"), {
     nombre: p.nombre, precio: Number(p.precio) || 0, categoria: p.categoria || "Bebida",
     stockActual: Number(p.stockActual) || 0, stockMinimo: Number(p.stockMinimo) || 0,
+    descuentaId: p.descuentaId || null,
+    descuentaCant: p.descuentaId ? (Number(p.descuentaCant) || 1) : null,
   });
 
 export const actualizarProducto = (id, patch) => {
