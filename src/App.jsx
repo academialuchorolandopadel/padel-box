@@ -156,6 +156,7 @@ function Sistema({ perfil }) {
               })}
               onReabrir={svcCuentas.reabrirCuenta}
               onBorrarCuenta={svcCuentas.borrarCuenta}
+              onEntregarObsequio={svcFijos.entregarObsequio}
             />
           </>
         )}
