@@ -160,9 +160,11 @@ function Sistema({ perfil }) {
           </>
         )}
         {tab === "fijos" && (
-          <Fijos fijos={fijos} clientes={clientes}
+          <Fijos fijos={fijos} clientes={clientes} productos={productos}
             onAgregar={svcFijos.crearFijo} onBorrar={svcFijos.borrarFijo}
-            onUsar={async (f) => { await svcFijos.usarFijo(f); setActiveBox(f.boxId); setTab("canchas"); }} />
+            onActualizar={svcFijos.actualizarFijo}
+            onRenovar={async (f) => { await svcFijos.renovarFijo(f); }}
+            onUsar={async (f, horas) => { await svcFijos.usarFijo(f, horas); setActiveBox(f.boxId); setTab("canchas"); }} />
         )}
         {tab === "clientes" && <Clientes clientes={clientes} onVer={setVerCliente} />}
         {tab === "stock" && <Stock productos={productos} onReponer={svcVarios.reponerStock} onCrear={svcVarios.crearProducto} onActualizar={svcVarios.actualizarProducto} onBorrar={svcVarios.borrarProducto} esAdmin={esAdmin} />}
@@ -224,8 +226,8 @@ function Sistema({ perfil }) {
       )}
       {ajustes && <Ajustes config={config} esAdmin={esAdmin} onClose={() => setAjustes(false)} />}
       {pickFijo && (
-        <PickFijo fijos={fijos.filter((f) => f.restante > 0)}
-          onUsar={async (f) => { await svcFijos.usarFijo(f); setActiveBox(f.boxId); setPickFijo(false); }}
+        <PickFijo fijos={fijos.filter((f) => f.estado !== "completado" && (f.horasRestante ?? f.horasTotal) > 0)}
+          onUsar={async (f) => { await svcFijos.usarFijo(f, f.horasPorSesion); setActiveBox(f.boxId); setPickFijo(false); }}
           onClose={() => setPickFijo(false)} />
       )}
     </div>
