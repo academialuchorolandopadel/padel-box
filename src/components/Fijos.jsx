@@ -213,17 +213,17 @@ function FijoForm({ clientes, productos, inicial, onClose, onGuardar, onBorrar }
             <div style={{ flex: 1 }}>
               <label style={S.flabel}>Hora de inicio</label>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <button style={S.horaBtn} onClick={() => setHoraInicio((h) => sumarMinutos(h, -30))}><Minus size={16} /></button>
+                <button style={S.horaBtn} onClick={() => setHoraInicio((h) => sumarMinutos(h, -30))}><Minus size={14} /></button>
                 <span style={{ ...S.horaVal, flex: 1 }}>{horaInicio}</span>
-                <button style={S.horaBtn} onClick={() => setHoraInicio((h) => sumarMinutos(h, 30))}><Plus size={16} /></button>
+                <button style={S.horaBtn} onClick={() => setHoraInicio((h) => sumarMinutos(h, 30))}><Plus size={14} /></button>
               </div>
             </div>
             <div style={{ flex: 1 }}>
               <label style={S.flabel}>Horas por sesión</label>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <button style={S.horaBtn} onClick={() => setHorasPorSesion((h) => Math.max(0.5, h - 0.5))}><Minus size={16} /></button>
+                <button style={S.horaBtn} onClick={() => setHorasPorSesion((h) => Math.max(0.5, h - 0.5))}><Minus size={14} /></button>
                 <span style={{ ...S.horaVal, flex: 1 }}>{textoDuracion(horasPorSesion)}</span>
-                <button style={S.horaBtn} onClick={() => setHorasPorSesion((h) => h + 0.5)}><Plus size={16} /></button>
+                <button style={S.horaBtn} onClick={() => setHorasPorSesion((h) => h + 0.5)}><Plus size={14} /></button>
               </div>
             </div>
           </div>
