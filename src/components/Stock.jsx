@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AlertTriangle, Check, Plus, Search, Trash2, X } from "lucide-react";
+import { AlertTriangle, Check, Gift, Plus, Search, Trash2, X } from "lucide-react";
 import { S } from "../styles";
 import { GS } from "../constants";
 
@@ -62,7 +62,7 @@ export default function Stock({ productos, onReponer, onCrear, onActualizar, onB
       </div>
 
       {editando && (
-        <ProductoEditor producto={editando} esAdmin={esAdmin}
+        <ProductoEditor producto={editando} esAdmin={esAdmin} productos={productos}
           onClose={() => setEditando(null)}
           onCrear={onCrear} onActualizar={onActualizar} onBorrar={onBorrar} />
       )}
@@ -70,22 +70,30 @@ export default function Stock({ productos, onReponer, onCrear, onActualizar, onB
   );
 }
 
-function ProductoEditor({ producto, esAdmin, onClose, onCrear, onActualizar, onBorrar }) {
+function ProductoEditor({ producto, esAdmin, productos, onClose, onCrear, onActualizar, onBorrar }) {
   const esNuevo = !producto.id;
   const [nombre, setNombre] = useState(producto.nombre || "");
   const [precio, setPrecio] = useState(producto.precio ?? "");
   const [categoria, setCategoria] = useState(producto.categoria || "Bebida");
   const [stockActual, setStockActual] = useState(producto.stockActual ?? 0);
   const [stockMinimo, setStockMinimo] = useState(producto.stockMinimo ?? 0);
+  const [esPromo, setEsPromo] = useState(!!producto.descuentaId);
+  const [descuentaId, setDescuentaId] = useState(producto.descuentaId || "");
+  const [descuentaCant, setDescuentaCant] = useState(producto.descuentaCant || 3);
   const [guardando, setGuardando] = useState(false);
   const esServicio = categoria === "Servicio";
+
+  // productos que pueden ser "base" (no servicios, y distintos de este mismo)
+  const baseOpciones = (productos || []).filter((p) => p.categoria !== "Servicio" && p.id !== producto.id);
 
   const guardar = async () => {
     if (!nombre.trim()) { alert("Ponele un nombre al producto."); return; }
     setGuardando(true);
     try {
       const data = { nombre: nombre.trim(), precio, categoria,
-        stockActual: esServicio ? 999 : stockActual, stockMinimo: esServicio ? 0 : stockMinimo };
+        stockActual: esServicio ? 999 : stockActual, stockMinimo: esServicio ? 0 : stockMinimo,
+        descuentaId: esPromo && descuentaId ? descuentaId : null,
+        descuentaCant: esPromo && descuentaId ? Number(descuentaCant) || 1 : null };
       if (esNuevo) await onCrear(data);
       else await onActualizar(producto.id, data);
       onClose();
@@ -136,6 +144,35 @@ function ProductoEditor({ producto, esAdmin, onClose, onCrear, onActualizar, onB
             </div>
           )}
           {esServicio && <p style={{ color: "#8b93a0", fontSize: 13.5, margin: 0 }}>Los servicios (alquiler de pala, tubo, parrilla…) no llevan control de stock.</p>}
+
+          {!esServicio && baseOpciones.length > 0 && (
+            <div style={{ borderTop: "1px solid #1c222b", paddingTop: 14 }}>
+              <button onClick={() => setEsPromo((v) => !v)}
+                style={{ ...S.toggle, ...(esPromo ? S.toggleOn : {}), width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <Gift size={16} /> {esPromo ? "Es una promo (descuenta otro producto)" : "¿Es una promo? (ej: 3 cervezas)"}
+              </button>
+              {esPromo && (
+                <div style={{ marginTop: 12 }}>
+                  <p style={{ color: "#8b93a0", fontSize: 13, margin: "0 0 10px", lineHeight: 1.5 }}>
+                    Al vender esta promo se descuenta del stock de otro producto. Ej: “Munich promo” descuenta 3 de “Munich mediano”.
+                  </p>
+                  <div style={S.formRow}>
+                    <div style={{ flex: 2 }}>
+                      <label style={S.flabel}>Descuenta de</label>
+                      <select style={S.select} value={descuentaId} onChange={(e) => setDescuentaId(e.target.value)}>
+                        <option value="">— Elegir producto —</option>
+                        {baseOpciones.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                      </select>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={S.flabel}>Cuántas unidades</label>
+                      <input style={S.fieldInput} type="number" min="1" value={descuentaCant} onChange={(e) => setDescuentaCant(e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <button style={{ ...S.confirmBtn, width: "100%", flex: "none", marginTop: 4 }} disabled={guardando} onClick={guardar}>
             <Check size={18} /> {guardando ? "Guardando…" : esNuevo ? "Crear producto" : "Guardar cambios"}
