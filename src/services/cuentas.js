@@ -35,22 +35,38 @@ export const guardarCuenta = async (cuenta, cobrar) => {
       yaEstabaCerrada = prev.exists() && prev.data().estado === "cerrada";
     }
 
-    // 2) Leer productos consumidos
-    const lecturas = [];
+    // 2) Acumular cuánto descontar de cada producto.
+    //    Si el producto vendido es una promo (tiene descuentaId), se descuenta
+    //    del producto BASE: descuentaCant × cantidad vendida. Si no, del propio.
+    const aDescontar = {}; // { productoId: unidades }
     if (!yaEstabaCerrada) {
       for (const item of payload.items || []) {
         if (!item.productoId) continue;
-        const pRef = doc(db, "productos", item.productoId);
-        lecturas.push({ item, pRef, snap: await tx.get(pRef) });
+        const pSnap = await tx.get(doc(db, "productos", item.productoId));
+        if (!pSnap.exists()) continue;
+        const p = pSnap.data();
+        if (p.descuentaId && p.descuentaCant) {
+          // promo: descuenta del producto base
+          aDescontar[p.descuentaId] = (aDescontar[p.descuentaId] || 0) + p.descuentaCant * item.cantidad;
+        } else if (p.categoria !== "Servicio") {
+          // producto normal: descuenta de sí mismo (los servicios no llevan stock)
+          aDescontar[item.productoId] = (aDescontar[item.productoId] || 0) + item.cantidad;
+        }
       }
     }
 
-    // 3) Escribir cuenta cerrada + descuentos
+    // 3) Leer el stock actual de cada producto afectado
+    const stocks = {};
+    for (const pid of Object.keys(aDescontar)) {
+      const s = await tx.get(doc(db, "productos", pid));
+      if (s.exists()) stocks[pid] = s.data().stockActual ?? 0;
+    }
+
+    // 4) Escribir cuenta cerrada + aplicar descuentos
     tx.set(ref, { ...payload, fecha: payload.fecha || hoyISO() }, { merge: true });
-    for (const { item, pRef, snap } of lecturas) {
-      if (!snap.exists()) continue;
-      const actual = snap.data().stockActual ?? 0;
-      tx.update(pRef, { stockActual: actual - item.cantidad });
+    for (const pid of Object.keys(aDescontar)) {
+      if (!(pid in stocks)) continue;
+      tx.update(doc(db, "productos", pid), { stockActual: stocks[pid] - aDescontar[pid] });
     }
   });
 };
