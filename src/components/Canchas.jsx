@@ -1,5 +1,5 @@
 import React from "react";
-import { Check, Clock, Minus, Plus, Repeat, RotateCcw, StickyNote, Trash2 } from "lucide-react";
+import { Check, Clock, Gift, Minus, Plus, Repeat, RotateCcw, StickyNote, Trash2 } from "lucide-react";
 import { S } from "../styles";
 import { BOXES, GS, PAGOS, horasEntre, perPart, sumarMinutos, textoDuracion, totalCuenta } from "../constants";
 import { Stepper } from "./ui";
@@ -44,7 +44,7 @@ export default function Canchas(props) {
   );
 }
 
-function TurnoCard({ turno, cuentas, fijos, onUpdTurno, onBorrarTurno, onRepartir, onSetPartes, onEdit, onNueva, onReabrir, onBorrarCuenta }) {
+function TurnoCard({ turno, cuentas, fijos, onUpdTurno, onBorrarTurno, onRepartir, onSetPartes, onEdit, onNueva, onReabrir, onBorrarCuenta, onEntregarObsequio }) {
   const lista = cuentas.filter((c) => c.turnoId === turno.id);
   const horas = horasEntre(turno.horaInicio, turno.horaFin);
   const jugadores = lista.length;
@@ -64,15 +64,15 @@ function TurnoCard({ turno, cuentas, fijos, onUpdTurno, onBorrarTurno, onReparti
           <Clock size={16} color="#5fe0a1" />
           <div style={S.horaCtl}>
             <span style={S.horaLbl}>Empieza</span>
-            <button style={S.horaBtn} onClick={() => onUpdTurno(turno, { horaInicio: sumarMinutos(turno.horaInicio, -30), horaFin: sumarMinutos(turno.horaFin, -30) }, lista)}><Minus size={16} /></button>
+            <button style={S.horaBtn} onClick={() => onUpdTurno(turno, { horaInicio: sumarMinutos(turno.horaInicio, -30), horaFin: sumarMinutos(turno.horaFin, -30) }, lista)}><Minus size={14} /></button>
             <span style={S.horaVal}>{turno.horaInicio}</span>
-            <button style={S.horaBtn} onClick={() => onUpdTurno(turno, { horaInicio: sumarMinutos(turno.horaInicio, 30), horaFin: sumarMinutos(turno.horaFin, 30) }, lista)}><Plus size={16} /></button>
+            <button style={S.horaBtn} onClick={() => onUpdTurno(turno, { horaInicio: sumarMinutos(turno.horaInicio, 30), horaFin: sumarMinutos(turno.horaFin, 30) }, lista)}><Plus size={14} /></button>
           </div>
           <div style={S.horaCtl}>
             <span style={S.horaLbl}>Dura</span>
-            <button style={S.horaBtn} onClick={() => { const nf = sumarMinutos(turno.horaInicio, Math.max(30, Math.round(horas * 60) - 30)); onUpdTurno(turno, { horaFin: nf }, lista); }}><Minus size={16} /></button>
+            <button style={S.horaBtn} onClick={() => { const nf = sumarMinutos(turno.horaInicio, Math.max(30, Math.round(horas * 60) - 30)); onUpdTurno(turno, { horaFin: nf }, lista); }}><Minus size={14} /></button>
             <span style={S.horaVal}>{textoDuracion(horas)}</span>
-            <button style={S.horaBtn} onClick={() => { const nf = sumarMinutos(turno.horaInicio, Math.round(horas * 60) + 30); onUpdTurno(turno, { horaFin: nf }, lista); }}><Plus size={16} /></button>
+            <button style={S.horaBtn} onClick={() => { const nf = sumarMinutos(turno.horaInicio, Math.round(horas * 60) + 30); onUpdTurno(turno, { horaFin: nf }, lista); }}><Plus size={14} /></button>
           </div>
           {esFijo && <span style={S.tagFijo}><Repeat size={12} /> Fijo · {fijo?.clienteNombre || "—"}</span>}
         </div>
@@ -124,6 +124,19 @@ function TurnoCard({ turno, cuentas, fijos, onUpdTurno, onBorrarTurno, onReparti
           ))}
         </div>
       </div>
+
+      {(turno.obsequios || []).length > 0 && (
+        <div style={S.obsequiosBar}>
+          <span style={S.obsequiosLbl}><Gift size={15} color="#e8a13c" /> Obsequios del paquete — tocá al entregar:</span>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {turno.obsequios.map((o) => (
+              <button key={o.productoId} style={S.obsequioChip} onClick={() => onEntregarObsequio(turno, o.productoId)}>
+                {o.cantidad}× {o.nombre}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {lista.length === 0 ? (
         <div style={S.turnoEmpty}>Todavía no cargaste a nadie. Tocá <b style={{ color: "#5fe0a1" }}>+ Agregar persona</b>.</div>
