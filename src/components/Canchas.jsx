@@ -58,8 +58,8 @@ function TurnoCard({ turno, cuentas, fijos, onUpdTurno, onBorrarTurno, onReparti
   const tuboOk = tuboAsig === turno.tuboPartes;
 
   return (
-    <div style={S.turnoCard}>
-      <div style={S.turnoHead}>
+    <div style={{ ...S.turnoCard, ...(esFijo ? S.turnoCardFijo : {}) }}>
+      <div style={{ ...S.turnoHead, ...(esFijo ? S.turnoHeadFijo : {}) }}>
         <div style={S.turnoHeadL}>
           <Clock size={16} color="#5fe0a1" />
           <div style={S.horaCtl}>
