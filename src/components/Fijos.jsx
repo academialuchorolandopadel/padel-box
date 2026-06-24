@@ -6,7 +6,7 @@ import { Stepper } from "./ui";
 
 const TAMANOS = [8, 12, 16];
 
-export default function Fijos({ fijos, clientes, productos, onAgregar, onBorrar, onUsar, onRenovar, onActualizar }) {
+export default function Fijos({ fijos, clientes, productos, esAdmin, onAgregar, onBorrar, onUsar, onRenovar, onActualizar }) {
   const [form, setForm] = useState(false);     // crear nuevo
   const [editar, setEditar] = useState(null);  // paquete a editar
   const [usar, setUsar] = useState(null);       // paquete para "vino hoy"
@@ -63,12 +63,20 @@ export default function Fijos({ fijos, clientes, productos, onAgregar, onBorrar,
               {completado ? (
                 <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
                   <button style={{ ...S.confirmBtn, flex: 1 }} onClick={() => onRenovar(f)}><RefreshCw size={16} /> Renovar mes</button>
-                  <button style={{ ...S.saveOpen, flex: "none", paddingLeft: 14, paddingRight: 14, color: "#f0a45b", borderColor: "#f0a45b55" }} onClick={() => confirm(`¿Dar de baja el paquete de ${f.clienteNombre}?`) && onBorrar(f.id)}><Trash2 size={16} /></button>
+                  <button style={{ ...S.saveOpen, flex: "none", paddingLeft: 14, paddingRight: 14, color: "#f0a45b", borderColor: "#f0a45b55" }} onClick={() => confirm(`¿Borrar el paquete de ${f.clienteNombre}?`) && onBorrar(f.id)}><Trash2 size={16} /></button>
                 </div>
               ) : (
-                <button style={{ ...S.confirmBtn, flex: "none", width: "100%", marginTop: 14 }} onClick={() => setUsar(f)}>
-                  <DoorOpen size={17} /> Vino hoy — abrir turno
-                </button>
+                <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                  <button style={{ ...S.confirmBtn, flex: 1 }} onClick={() => setUsar(f)}>
+                    <DoorOpen size={17} /> Vino hoy — abrir turno
+                  </button>
+                  {esAdmin && (
+                    <button style={{ ...S.saveOpen, flex: "none", paddingLeft: 14, paddingRight: 14, color: "#f0a45b", borderColor: "#f0a45b55" }}
+                      onClick={() => confirm(`¿Borrar el paquete de ${f.clienteNombre}? Esto no se puede deshacer.`) && onBorrar(f.id)}>
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           );
@@ -77,9 +85,9 @@ export default function Fijos({ fijos, clientes, productos, onAgregar, onBorrar,
 
       {form && <FijoForm clientes={clientes} productos={productos} onClose={() => setForm(false)}
         onGuardar={(f) => { onAgregar(f); setForm(false); }} />}
-      {editar && <FijoForm clientes={clientes} productos={productos} inicial={editar} onClose={() => setEditar(null)}
+      {editar && <FijoForm clientes={clientes} productos={productos} inicial={editar} esAdmin={esAdmin} onClose={() => setEditar(null)}
         onGuardar={(f) => { onActualizar(editar.id, f); setEditar(null); }}
-        onBorrar={() => { if (confirm("¿Dar de baja este paquete?")) { onBorrar(editar.id); setEditar(null); } }} />}
+        onBorrar={() => { if (confirm("¿Borrar este paquete? Esto no se puede deshacer.")) { onBorrar(editar.id); setEditar(null); } }} />}
       {usar && <UsarFijoModal fijo={usar} onClose={() => setUsar(null)}
         onConfirmar={(horas) => { onUsar(usar, horas); setUsar(null); }} />}
     </div>
@@ -126,12 +134,13 @@ function UsarFijoModal({ fijo, onClose, onConfirmar }) {
   );
 }
 
-function FijoForm({ clientes, productos, inicial, onClose, onGuardar, onBorrar }) {
+function FijoForm({ clientes, productos, inicial, esAdmin, onClose, onGuardar, onBorrar }) {
   const esEdicion = !!inicial;
   const [clienteNombre, setClienteNombre] = useState(inicial?.clienteNombre || "");
   const [clienteId, setClienteId] = useState(inicial?.clienteId || null);
   const [boxId, setBoxId] = useState(inicial?.boxId || "box1");
   const [horasTotal, setHorasTotal] = useState(inicial?.horasTotal || 8);
+  const [horasRestante, setHorasRestante] = useState(inicial?.horasRestante ?? inicial?.horasTotal ?? 8);
   const [horasPorSesion, setHorasPorSesion] = useState(inicial?.horasPorSesion || 2);
   const [diaSemana, setDiaSemana] = useState(inicial?.diaSemana || "Jueves");
   const [horaInicio, setHoraInicio] = useState(inicial?.horaInicio || "19:00");
@@ -162,7 +171,9 @@ function FijoForm({ clientes, productos, inicial, onClose, onGuardar, onBorrar }
       clienteId, clienteNombre: clienteNombre.trim(), boxId,
       diaSemana, horaInicio,
       horasTotal: Number(horasTotal),
-      horasRestante: esEdicion ? (inicial.horasRestante ?? Number(horasTotal)) : Number(horasTotal),
+      horasRestante: esEdicion
+        ? (esAdmin ? Math.min(Number(horasRestante), Number(horasTotal)) : (inicial.horasRestante ?? Number(horasTotal)))
+        : Number(horasTotal),
       horasPorSesion: Number(horasPorSesion),
       precioPaquete: Number(precioPaquete),
       obsequios: obsequios.map((o) => ({ productoId: o.productoId, nombre: o.nombre, cantidad: Number(o.cantidad) })),
@@ -209,6 +220,18 @@ function FijoForm({ clientes, productos, inicial, onClose, onGuardar, onBorrar }
             </div>
           </div>
 
+          {esEdicion && esAdmin && (
+            <div style={{ background: "#10172a", border: "1px solid #2c3f6e", borderRadius: 10, padding: "12px 14px" }}>
+              <label style={S.flabel}>Corregir horas que le quedan (solo admin)</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <button style={S.horaBtn} onClick={() => setHorasRestante((h) => Math.max(0, Number(h) - 0.5))}><Minus size={14} /></button>
+                <span style={{ ...S.horaVal, flex: 1 }}>{textoDuracion(Number(horasRestante))}</span>
+                <button style={S.horaBtn} onClick={() => setHorasRestante((h) => Math.min(Number(horasTotal), Number(h) + 0.5))}><Plus size={14} /></button>
+              </div>
+              <p style={{ color: "#8b93a0", fontSize: 12.5, margin: "8px 0 0" }}>Usalo si se descontaron horas por error. Máximo: {horasTotal} h.</p>
+            </div>
+          )}
+
           <div style={S.formRow}>
             <div style={{ flex: 1 }}>
               <label style={S.flabel}>Hora de inicio</label>
@@ -251,7 +274,7 @@ function FijoForm({ clientes, productos, inicial, onClose, onGuardar, onBorrar }
           </button>
           {esEdicion && onBorrar && (
             <button style={{ ...S.saveOpen, width: "100%", color: "#f0a45b", borderColor: "#f0a45b55", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }} onClick={onBorrar}>
-              <Trash2 size={16} /> Dar de baja el paquete
+              <Trash2 size={16} /> Borrar el paquete
             </button>
           )}
         </div>
