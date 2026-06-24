@@ -1,8 +1,9 @@
 import React, { useMemo } from "react";
+import { Trash2 } from "lucide-react";
 import { S } from "../styles";
 import { BOXES, GS, PAGOS, totalCuenta } from "../constants";
 
-export default function Caja({ cerradasHoy, abiertas, gastosHoy, onEdit }) {
+export default function Caja({ cerradasHoy, abiertas, gastosHoy, onEdit, onBorrarCuenta }) {
   const porPago = useMemo(() => {
     const m = {}; Object.keys(PAGOS).forEach((k) => (m[k] = 0));
     cerradasHoy.forEach((c) => (m[c.formaPago] = (m[c.formaPago] || 0) + totalCuenta(c)));
@@ -41,12 +42,18 @@ export default function Caja({ cerradasHoy, abiertas, gastosHoy, onEdit }) {
           <h3 style={S.h3}>⚠ Cuentas sin cobrar (tocá para cobrar)</h3>
           <div style={{ ...S.table, marginBottom: 22, borderColor: "#e8a13c44" }}>
             {abiertas.map((c) => (
-              <button key={c.id} style={{ ...S.trow, width: "100%", background: "none", border: "none", borderBottom: "1px solid #191f29", color: "inherit", cursor: "pointer", textAlign: "left" }} onClick={() => onEdit(c)}>
-                <span style={{ flex: 1, fontWeight: 600 }}>{c.clienteNombre || "—"}</span>
-                <span style={{ width: 70, color: "#8b93a0" }}>{boxN(c.boxId)}</span>
-                <span style={{ width: 86, color: "#8b93a0", fontSize: 13 }} className="hide-sm">{c.fecha}</span>
-                <span style={{ width: 120, textAlign: "right", fontWeight: 800, color: "#f2b659" }}>{GS(totalCuenta(c))}</span>
-              </button>
+              <div key={c.id} style={{ ...S.trow, borderBottom: "1px solid #191f29" }}>
+                <button style={{ flex: 1, minWidth: 0, background: "none", border: "none", color: "inherit", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10, padding: 0 }} onClick={() => onEdit(c)}>
+                  <span style={{ flex: 1, fontWeight: 600 }}>{c.clienteNombre || "—"}</span>
+                  <span style={{ width: 70, color: "#8b93a0" }}>{boxN(c.boxId)}</span>
+                  <span style={{ width: 86, color: "#8b93a0", fontSize: 13 }} className="hide-sm">{c.fecha}</span>
+                  <span style={{ width: 120, textAlign: "right", fontWeight: 800, color: "#f2b659" }}>{GS(totalCuenta(c))}</span>
+                </button>
+                <button style={{ ...S.delBtn, marginLeft: 8 }} title="Borrar esta cuenta"
+                  onClick={() => confirm(`¿Borrar la cuenta de ${c.clienteNombre || "—"}? Esto no la cobra, la elimina.`) && onBorrarCuenta(c.id)}>
+                  <Trash2 size={16} />
+                </button>
+              </div>
             ))}
           </div>
         </>
