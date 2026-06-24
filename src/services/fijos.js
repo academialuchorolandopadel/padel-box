@@ -4,35 +4,43 @@ import {
 import { db } from "../lib/firebase";
 import { hoyISO, sumarMinutos } from "../constants";
 
-/* Crea un paquete de turno fijo.
-   Modelo:
+/* Paquete de turno fijo.
    { clienteId, clienteNombre, boxId, diaSemana, horaInicio,
      horasTotal, horasRestante, horasPorSesion,
-     obsequios: [{ productoId, nombre, cantidad }],
-     precioPaquete, estado: 'activo'|'completado', creado } */
-export const crearFijo = (fijo) =>
-  addDoc(collection(db, "fijos"), { ...fijo, estado: "activo", creado: hoyISO() });
+     obsequios:        [{ productoId, nombre, cantidad }]  // la "receta" del mes (fija)
+     obsequiosRestante:[{ productoId, nombre, cantidad }]  // saldo que se va entregando
+     precioPaquete, estado:'activo'|'completado', creado } */
 
+const copiaObsequios = (obs) =>
+  (obs || []).filter((o) => o.cantidad > 0)
+    .map((o) => ({ productoId: o.productoId, nombre: o.nombre, cantidad: Number(o.cantidad) }));
+
+export const crearFijo = (fijo) =>
+  addDoc(collection(db, "fijos"), {
+    ...fijo,
+    obsequiosRestante: copiaObsequios(fijo.obsequios), // arranca el mes con todo el saldo
+    estado: "activo",
+    creado: hoyISO(),
+  });
+
+/* Al editar: si cambió la receta de obsequios, se respeta el saldo restante
+   que el admin haya fijado; si no se toca, queda el que estaba. */
 export const actualizarFijo = (id, patch) => updateDoc(doc(db, "fijos", id), patch);
 
 export const borrarFijo = (id) => deleteDoc(doc(db, "fijos", id));
 
-/* Renueva el paquete: vuelve a llenar las horas y deja el estado activo.
-   Los obsequios NO se acumulan: el nuevo mes arranca limpio (se entregan
-   con el próximo "Vino hoy"). */
+/* Renueva el mes: rellena horas y vuelve a cargar el saldo de obsequios desde la receta. */
 export const renovarFijo = (fijo) =>
   updateDoc(doc(db, "fijos", fijo.id), {
     horasRestante: fijo.horasTotal,
+    obsequiosRestante: copiaObsequios(fijo.obsequios),
     estado: "activo",
     renovado: hoyISO(),
   });
 
-/* Registra que el cliente vino HOY con su turno fijo.
-   - horasSesion: horas reales que va a jugar esta vez (editable antes de abrir)
-   - abre el turno en su horario fijo (cancha prepaga = 0)
-   - descuenta esas horas del paquete; si llega a 0 lo marca "completado"
-   - carga los obsequios del paquete como PENDIENTES del cliente (para retirar)
-   Todo en un solo batch para que no queden datos a medias. */
+/* "Vino hoy": abre el turno fijo (cancha prepaga = 0) y descuenta las horas.
+   Los obsequios NO se copian al turno: el turno solo se marca como fijo y lee
+   el saldo mensual del paquete (obsequiosRestante). */
 export const usarFijo = async (fijo, horasSesion) => {
   const horas = Number(horasSesion) || fijo.horasPorSesion || 1;
   const horaInicio = fijo.horaInicio || "20:00";
@@ -41,23 +49,14 @@ export const usarFijo = async (fijo, horasSesion) => {
 
   const batch = writeBatch(db);
 
-  // obsequios del paquete -> se guardan DENTRO del turno (no en el cliente),
-  // con cuánto falta entregar de cada uno. El cajero los entrega desde el turno.
-  const obsequios = (fijo.obsequios || [])
-    .filter((o) => o.cantidad > 0)
-    .map((o) => ({ productoId: o.productoId, nombre: o.nombre, cantidad: Number(o.cantidad) }));
-
-  // 1) turno prepago en el horario fijo, con sus obsequios
   const turnoRef = doc(collection(db, "turnos"));
   batch.set(turnoRef, {
     boxId: fijo.boxId, fecha: hoyISO(), horaInicio, horaFin,
     fijoId: fijo.id, canchaTotal: 0, canchaPartes: 1,
     tuboActivo: false, tuboPrecio: 0, tuboPartes: 1, tuboGratis: false,
-    obsequios,
     creadoTs: Date.now(),
   });
 
-  // 2) descuento de horas (+ completado si llega a 0)
   batch.update(doc(db, "fijos", fijo.id), {
     horasRestante: restante,
     ...(restante <= 0 ? { estado: "completado" } : {}),
@@ -66,20 +65,23 @@ export const usarFijo = async (fijo, horasSesion) => {
   await batch.commit();
 };
 
-/* Entrega UN obsequio del turno: baja en 1 lo que falta entregar y descuenta
-   1 unidad del stock del producto. Todo junto para no descuadrar. */
-export const entregarObsequio = async (turno, productoId) => {
-  const obsequios = (turno.obsequios || [])
+/* Entrega UN obsequio: descuenta 1 del saldo mensual del paquete (obsequiosRestante)
+   y 1 del stock del producto (o del base, si es promo). */
+export const entregarObsequio = async (fijoId, productoId) => {
+  const fijoSnap = await getDoc(doc(db, "fijos", fijoId));
+  if (!fijoSnap.exists()) return;
+  const fijo = fijoSnap.data();
+
+  const restante = (fijo.obsequiosRestante || [])
     .map((o) => (o.productoId === productoId ? { ...o, cantidad: o.cantidad - 1 } : o))
     .filter((o) => o.cantidad > 0);
 
   const batch = writeBatch(db);
-  batch.update(doc(db, "turnos", turno.id), { obsequios });
+  batch.update(doc(db, "fijos", fijoId), { obsequiosRestante: restante });
 
   const pSnap = await getDoc(doc(db, "productos", productoId));
   if (pSnap.exists()) {
     const p = pSnap.data();
-    // si el obsequio es una promo, descuenta del producto base; si no, de sí mismo
     if (p.descuentaId && p.descuentaCant) {
       const bSnap = await getDoc(doc(db, "productos", p.descuentaId));
       if (bSnap.exists())
