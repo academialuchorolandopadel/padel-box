@@ -161,7 +161,7 @@ function Sistema({ perfil }) {
           </>
         )}
         {tab === "fijos" && (
-          <Fijos fijos={fijos} clientes={clientes} productos={productos}
+          <Fijos fijos={fijos} clientes={clientes} productos={productos} esAdmin={esAdmin}
             onAgregar={svcFijos.crearFijo} onBorrar={svcFijos.borrarFijo}
             onActualizar={svcFijos.actualizarFijo}
             onRenovar={async (f) => { await svcFijos.renovarFijo(f); }}
