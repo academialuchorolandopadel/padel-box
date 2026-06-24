@@ -93,8 +93,8 @@ export default function CuentaEditor({ cuenta, boxNombre, productos, clientes, o
           </div>
         )}
 
-        <div style={S.posGrid}>
-          <div style={S.catalogo}>
+        <div style={S.posGrid} className="posGrid">
+          <div style={S.catalogo} className="catalogo">
             <div style={S.searchBar}>
               <Search size={16} color="#7a808a" />
               <input placeholder="Buscar producto…" value={busqProd} onChange={(e) => setBusqProd(e.target.value)} style={S.searchInput} />
@@ -116,7 +116,7 @@ export default function CuentaEditor({ cuenta, boxNombre, productos, clientes, o
           </div>
 
           <div style={S.ticket}>
-            <div style={S.ticketLines}>
+            <div style={S.ticketLines} className="ticketLines">
               <div style={S.fixedLine}><span>Su parte de cancha</span><b>{GS(cuenta.cargoCancha)}</b></div>
               {(cuenta.cargoTubo > 0 || cuenta.tuboPartes > 0) && <div style={S.fixedLine}><span>Su parte de tubo</span><b>{GS(cuenta.cargoTubo)}</b></div>}
               <div style={S.fixedHint}>Las partes se cambian desde la fila del turno</div>
