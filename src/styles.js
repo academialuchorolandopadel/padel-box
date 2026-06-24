@@ -43,6 +43,8 @@ export const S = {
   fijoBtn: { display: "flex", alignItems: "center", gap: 7, padding: "13px 16px", borderRadius: 11, border: "1.5px solid #5b8def", background: "transparent", color: "#9bb8f5", fontWeight: 800, fontSize: 14, cursor: "pointer", minHeight: 46 },
 
   turnoCard: { background: "#141a22", border: "1px solid #1c222b", borderRadius: 15, marginBottom: 16, overflow: "hidden" },
+  turnoCardFijo: { background: "#10172a", border: "2px solid #5b8def", boxShadow: "0 0 0 1px #5b8def33" },
+  turnoHeadFijo: { background: "#142046", borderBottom: "1px solid #2c3f6e" },
   turnoHead: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "13px 15px", background: "#111620", borderBottom: "1px solid #1c222b", flexWrap: "wrap" },
   turnoHeadL: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" },
   turnoHeadR: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" },
@@ -210,5 +212,8 @@ export const css = `
     .bottomNav { display: flex !important; }
     .hide-sm { display: none !important; }
     .repCols, .cdGrid { grid-template-columns: 1fr !important; }
+    .posGrid { grid-template-columns: 1fr !important; overflow-y: auto !important; }
+    .posGrid .catalogo { overflow: visible !important; border-right: none !important; border-bottom: 1px solid #1c222b; }
+    .posGrid .ticketLines { overflow: visible !important; }
   }
 `;
