@@ -125,12 +125,12 @@ function TurnoCard({ turno, cuentas, fijos, onUpdTurno, onBorrarTurno, onReparti
         </div>
       </div>
 
-      {(turno.obsequios || []).length > 0 && (
+      {esFijo && fijo && (fijo.obsequiosRestante || []).length > 0 && (
         <div style={S.obsequiosBar}>
-          <span style={S.obsequiosLbl}><Gift size={15} color="#e8a13c" /> Obsequios del paquete — tocá al entregar:</span>
+          <span style={S.obsequiosLbl}><Gift size={15} color="#e8a13c" /> Obsequios del mes — tocá al entregar:</span>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {turno.obsequios.map((o) => (
-              <button key={o.productoId} style={S.obsequioChip} onClick={() => onEntregarObsequio(turno, o.productoId)}>
+            {fijo.obsequiosRestante.map((o) => (
+              <button key={o.productoId} style={S.obsequioChip} onClick={() => onEntregarObsequio(fijo.id, o.productoId)}>
                 {o.cantidad}× {o.nombre}
               </button>
             ))}
