@@ -234,13 +234,11 @@ function FijoForm({ clientes, productos, inicial, onClose, onGuardar, onBorrar }
           </div>
 
           <div>
-            <label style={S.flabel}>Obsequios del mes (se entregan como pendientes)</label>
+            <label style={S.flabel}>Obsequios del mes (aparecen en el turno al tocar “Vino hoy”)</label>
             {obsequios.length === 0 && <div style={{ color: "#6a707a", fontSize: 13.5, marginBottom: 8 }}>Sin obsequios. Agregá si el paquete incluye algo de regalo.</div>}
             {obsequios.map((o, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <select style={{ ...S.select, flex: 1 }} value={o.productoId} onChange={(e) => setObsProd(i, e.target.value)}>
-                  {productos.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-                </select>
+                <ObsequioPicker productos={productos} value={o} onPick={(productoId) => setObsProd(i, productoId)} />
                 <Stepper small value={o.cantidad} onDelta={(d) => setObsCant(i, d)} />
                 <button style={S.delBtn} onClick={() => quitarObs(i)}><Trash2 size={15} /></button>
               </div>
@@ -283,6 +281,39 @@ export function PickFijo({ fijos, onUsar, onClose }) {
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* Buscador de producto para obsequios: deja escribir y filtra (no es un <select>) */
+function ObsequioPicker({ productos, value, onPick }) {
+  const [q, setQ] = useState("");
+  const [show, setShow] = useState(false);
+  const texto = show ? q : (value.nombre || "");
+  const matches = (q
+    ? productos.filter((p) => p.nombre.toLowerCase().includes(q.toLowerCase()))
+    : productos
+  ).slice(0, 8);
+  return (
+    <div style={{ position: "relative", flex: 1 }}>
+      <input
+        style={S.fieldInput}
+        placeholder="Buscar producto…"
+        value={texto}
+        onFocus={() => { setShow(true); setQ(""); }}
+        onBlur={() => setTimeout(() => setShow(false), 150)}
+        onChange={(e) => setQ(e.target.value)}
+      />
+      {show && matches.length > 0 && (
+        <div style={{ ...S.cliDrop, right: 0, maxHeight: 220, overflowY: "auto" }}>
+          {matches.map((p) => (
+            <button key={p.id} style={S.cliOpt}
+              onMouseDown={() => { onPick(p.id); setShow(false); }}>
+              {p.nombre}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
