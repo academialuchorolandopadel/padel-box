@@ -1,19 +1,33 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ChevronRight, Gift, Phone, Plus, Search, StickyNote, TrendingUp, X } from "lucide-react";
+import { Check, ChevronRight, Gift, Phone, Plus, Search, StickyNote, TrendingUp, X } from "lucide-react";
 import { collection, getDocs, limit, orderBy, query, where } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { S } from "../styles";
 import { GS, anioISO, mesISO, totalCuenta } from "../constants";
 import { Stepper } from "./ui";
 
-export default function Clientes({ clientes, onVer }) {
+export default function Clientes({ clientes, onVer, onCrear }) {
   const [q, setQ] = useState("");
+  const [creando, setCreando] = useState(false);
+  const [nuevoNombre, setNuevoNombre] = useState("");
   const lista = clientes
     .filter((c) => c.nombre.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+  const crear = async () => {
+    const nombre = nuevoNombre.trim();
+    if (!nombre) { alert("Escribí el nombre del cliente."); return; }
+    const creado = await onCrear(nombre);
+    setNuevoNombre(""); setCreando(false);
+    if (creado?.id) onVer(creado.id); // abre la ficha para completar teléfono/notas
+  };
+
   return (
     <div>
-      <h2 style={S.h2}>Clientes</h2>
+      <div style={S.pageHead}>
+        <h2 style={S.h2}>Clientes</h2>
+        <button style={S.primaryBtn} onClick={() => setCreando(true)}><Plus size={17} /> Nuevo cliente</button>
+      </div>
       <div style={{ ...S.searchBar, maxWidth: 380, marginBottom: 16 }}>
         <Search size={16} color="#7a808a" />
         <input placeholder="Buscar cliente…" value={q} onChange={(e) => setQ(e.target.value)} style={S.searchInput} />
@@ -30,8 +44,28 @@ export default function Clientes({ clientes, onVer }) {
             <span style={{ width: 26, textAlign: "right" }}><ChevronRight size={17} color="#5a606b" /></span>
           </button>
         ))}
-        {lista.length === 0 && <div style={S.emptyBox}>Sin clientes todavía. Se crean solos al cargar una cuenta con un nombre nuevo.</div>}
+        {lista.length === 0 && <div style={S.emptyBox}>Sin clientes todavía. Tocá <b style={{ color: "#5fe0a1" }}>Nuevo cliente</b> o cargá una cuenta con un nombre nuevo.</div>}
       </div>
+
+      {creando && (
+        <div style={S.overlay} onClick={() => setCreando(false)}>
+          <div style={{ ...S.modal, width: "min(420px,100%)" }} onClick={(e) => e.stopPropagation()}>
+            <div style={S.modalHead}>
+              <div style={{ fontSize: 19, fontWeight: 800 }}>Nuevo cliente</div>
+              <button style={S.iconBtn} onClick={() => setCreando(false)}><X size={20} /></button>
+            </div>
+            <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 14 }}>
+              <div>
+                <label style={S.flabel}>Nombre y apellido</label>
+                <input style={S.fieldInput} autoFocus value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && crear()} placeholder="Ej: Juan Pérez" />
+              </div>
+              <p style={{ color: "#8b93a0", fontSize: 13, margin: 0 }}>Después de crearlo se abre su ficha para cargar teléfono y notas.</p>
+              <button style={{ ...S.confirmBtn, width: "100%", flex: "none" }} onClick={crear}><Check size={18} /> Crear y abrir ficha</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
