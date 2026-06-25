@@ -55,5 +55,5 @@ export const perPart = (total, partes) => (partes > 0 ? total / partes : 0);
 export const calcCargo = (partes, total, partesTotal) =>
   Math.round((partes || 0) * perPart(total, partesTotal));
 export const totalCuenta = (c) =>
-  (c.cargoCancha || 0) + (c.cargoTubo || 0) +
-  (c.items || []).reduce((s, i) => s + i.precioUnit * i.cantidad, 0);
+  ((c && c.cargoCancha) || 0) + ((c && c.cargoTubo) || 0) +
+  (((c && c.items) || []).reduce((s, it) => s + ((it && it.precioUnit) || 0) * ((it && it.cantidad) || 0), 0));
