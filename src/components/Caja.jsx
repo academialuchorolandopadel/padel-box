@@ -50,7 +50,15 @@ export default function Caja({ cerradasHoy, abiertas, gastosHoy, onEdit, onBorra
                   <span style={{ width: 120, textAlign: "right", fontWeight: 800, color: "#f2b659" }}>{GS(totalCuenta(c))}</span>
                 </button>
                 <button style={{ ...S.delBtn, marginLeft: 8 }} title="Borrar esta cuenta"
-                  onClick={() => confirm(`¿Borrar la cuenta de ${c.clienteNombre || "—"}? Esto no la cobra, la elimina.`) && onBorrarCuenta(c.id)}>
+                  onClick={async () => {
+                    if (!confirm(`¿Borrar la cuenta de ${c.clienteNombre || "—"}? Esto no la cobra, la elimina.`)) return;
+                    try {
+                      await onBorrarCuenta(c.id);
+                    } catch (e) {
+                      console.error("Error al borrar cuenta:", e);
+                      alert("No se pudo borrar: " + (e?.code || e?.message || "error desconocido"));
+                    }
+                  }}>
                   <Trash2 size={16} />
                 </button>
               </div>
