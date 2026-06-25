@@ -1,5 +1,5 @@
 import {
-  addDoc, collection, deleteDoc, doc, getDoc, updateDoc, writeBatch,
+  addDoc, collection, doc, getDoc, updateDoc, writeBatch,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { hoyISO, sumarMinutos } from "../constants";
@@ -27,7 +27,11 @@ export const crearFijo = (fijo) =>
    que el admin haya fijado; si no se toca, queda el que estaba. */
 export const actualizarFijo = (id, patch) => updateDoc(doc(db, "fijos", id), patch);
 
-export const borrarFijo = (id) => deleteDoc(doc(db, "fijos", id));
+export const borrarFijo = async (id) => {
+  const batch = writeBatch(db);
+  batch.delete(doc(db, "fijos", String(id)));
+  await batch.commit();
+};
 
 /* Renueva el mes: rellena horas y vuelve a cargar el saldo de obsequios desde la receta. */
 export const renovarFijo = (fijo) =>
