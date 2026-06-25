@@ -1,5 +1,5 @@
 import {
-  addDoc, collection, deleteDoc, doc, getDocs, query, updateDoc, where, writeBatch,
+  addDoc, collection, doc, getDocs, query, updateDoc, where, writeBatch,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { calcCargo, horasEntre, hoyISO } from "../constants";
@@ -67,4 +67,8 @@ export const borrarTurno = async (turnoId) => {
 };
 
 export const tocarTurno = (turnoId, patch) => updateDoc(doc(db, "turnos", turnoId), patch);
-export const eliminarTurnoSolo = (turnoId) => deleteDoc(doc(db, "turnos", turnoId));
+export const eliminarTurnoSolo = async (turnoId) => {
+  const batch = writeBatch(db);
+  batch.delete(doc(db, "turnos", String(turnoId)));
+  await batch.commit();
+};
