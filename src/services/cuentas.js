@@ -92,4 +92,7 @@ export const cambiarPartes = (cuenta, campo, delta, turno) => {
 export const reabrirCuenta = (id) =>
   updateDoc(doc(db, "cuentas", id), { estado: "abierta", formaPago: null });
 
-export const borrarCuenta = (id) => deleteDoc(doc(db, "cuentas", id));
+export const borrarCuenta = async (id) => {
+  if (!id) throw new Error("Falta el id de la cuenta");
+  await deleteDoc(doc(db, "cuentas", String(id)));
+};
