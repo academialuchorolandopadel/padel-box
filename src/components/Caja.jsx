@@ -56,7 +56,7 @@ export default function Caja({ cerradasHoy, abiertas, gastosHoy, onEdit, onBorra
                       await onBorrarCuenta(c.id);
                     } catch (e) {
                       console.error("Error al borrar cuenta:", e);
-                      alert("No se pudo borrar: " + (e?.code || e?.message || "error desconocido"));
+                      alert("No se pudo borrar.\nDetalle: " + (e?.message || e) + "\n\n" + (e?.stack || "").split("\n").slice(0, 3).join("\n"));
                     }
                   }}>
                   <Trash2 size={16} />
