@@ -54,11 +54,22 @@ export default function Fijos({ fijos, clientes, productos, esAdmin, onAgregar, 
               <div style={S.fijoMeta}>
                 <span>{GS(f.precioPaquete)}/mes · {f.horasPorSesion} h por sesión</span>
               </div>
-              {(f.obsequios || []).length > 0 && (
-                <div style={{ ...S.fijoBenef, marginTop: 6, display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
-                  <Gift size={13} /> {f.obsequios.map((o) => `${o.cantidad}× ${o.nombre}`).join(" · ")}
-                </div>
-              )}
+              {(f.obsequios || []).length > 0 && (() => {
+                const receta = f.obsequios || [];
+                const saldo = f.obsequiosRestante ?? f.obsequios;
+                const quedan = saldo.filter((o) => o.cantidad > 0);
+                return (
+                  <div style={{ ...S.fijoBenef, marginTop: 6, display: "flex", flexDirection: "column", gap: 3 }}>
+                    <span style={{ display: "flex", alignItems: "flex-start", gap: 5 }}>
+                      <Gift size={13} style={{ marginTop: 2, flexShrink: 0 }} />
+                      <span>Incluye: {receta.map((o) => `${o.cantidad}× ${o.nombre}`).join(" · ")}</span>
+                    </span>
+                    {quedan.length > 0
+                      ? <span style={{ color: "#e8a13c", fontWeight: 700, paddingLeft: 18 }}>Quedan por entregar: {quedan.map((o) => `${o.cantidad}× ${o.nombre}`).join(" · ")}</span>
+                      : <span style={{ opacity: 0.7, paddingLeft: 18 }}>✓ Ya se entregó todo este mes</span>}
+                  </div>
+                );
+              })()}
 
               {completado ? (
                 <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
@@ -167,6 +178,7 @@ function FijoForm({ clientes, productos, inicial, esAdmin, onClose, onGuardar, o
 
   const guardar = () => {
     if (!clienteNombre.trim()) { alert("Elegí o escribí el cliente."); return; }
+    const obsLimpios = obsequios.map((o) => ({ productoId: o.productoId, nombre: o.nombre, cantidad: Number(o.cantidad) }));
     const data = {
       clienteId, clienteNombre: clienteNombre.trim(), boxId,
       diaSemana, horaInicio,
@@ -176,8 +188,14 @@ function FijoForm({ clientes, productos, inicial, esAdmin, onClose, onGuardar, o
         : Number(horasTotal),
       horasPorSesion: Number(horasPorSesion),
       precioPaquete: Number(precioPaquete),
-      obsequios: obsequios.map((o) => ({ productoId: o.productoId, nombre: o.nombre, cantidad: Number(o.cantidad) })),
+      obsequios: obsLimpios,
     };
+    // Si cambió la receta de obsequios (al crear, o al editar la lista), se regenera el saldo del mes.
+    const recetaOriginal = JSON.stringify((inicial?.obsequios || []).map((o) => ({ productoId: o.productoId, nombre: o.nombre, cantidad: Number(o.cantidad) })));
+    const recetaNueva = JSON.stringify(obsLimpios);
+    if (!esEdicion || recetaOriginal !== recetaNueva) {
+      data.obsequiosRestante = obsLimpios.filter((o) => o.cantidad > 0);
+    }
     onGuardar(data);
   };
 
