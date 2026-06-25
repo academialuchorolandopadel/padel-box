@@ -1,5 +1,5 @@
 import {
-  addDoc, collection, deleteDoc, doc, increment, setDoc, updateDoc,
+  addDoc, collection, doc, increment, setDoc, updateDoc, writeBatch,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { hoyISO } from "../constants";
@@ -7,7 +7,11 @@ import { hoyISO } from "../constants";
 /* ---- gastos ---- */
 export const crearGasto = (g) =>
   addDoc(collection(db, "gastos"), { ...g, fecha: hoyISO() });
-export const borrarGasto = (id) => deleteDoc(doc(db, "gastos", id));
+export const borrarGasto = async (id) => {
+  const batch = writeBatch(db);
+  batch.delete(doc(db, "gastos", String(id)));
+  await batch.commit();
+};
 
 /* ---- stock ---- */
 export const reponerStock = (productoId, cantidad) =>
@@ -30,7 +34,11 @@ export const actualizarProducto = (id, patch) => {
   return updateDoc(doc(db, "productos", id), limpio);
 };
 
-export const borrarProducto = (id) => deleteDoc(doc(db, "productos", id));
+export const borrarProducto = async (id) => {
+  const batch = writeBatch(db);
+  batch.delete(doc(db, "productos", String(id)));
+  await batch.commit();
+};
 
 /* ---- config de precios ---- */
 export const guardarConfig = (config) =>
