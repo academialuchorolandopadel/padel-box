@@ -5,9 +5,10 @@ import { db } from "../lib/firebase";
 import { calcCargo, horasEntre, hoyISO } from "../constants";
 
 /** Crea un turno común con los precios actuales de config. */
-export const crearTurno = (boxId, config) =>
+export const crearTurno = (boxId, config, origen = "admin") =>
   addDoc(collection(db, "turnos"), {
     boxId, fecha: hoyISO(), horaInicio: "20:00", horaFin: "21:00", fijoId: null,
+    origen,
     canchaTotal: config.valorHora[boxId], canchaPartes: 1,
     tuboActivo: false, tuboPrecio: config.tuboPrecio, tuboPartes: 1, tuboGratis: false,
     creadoTs: Date.now(),
