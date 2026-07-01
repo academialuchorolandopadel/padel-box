@@ -44,6 +44,8 @@ export const S = {
 
   turnoCard: { background: "#141a22", border: "1px solid #1c222b", borderRadius: 15, marginBottom: 16, overflow: "hidden" },
   turnoCardFijo: { background: "#10172a", border: "2px solid #5b8def", boxShadow: "0 0 0 1px #5b8def33" },
+  turnoCardPendiente: { border: "2px solid #e8a13c", boxShadow: "0 0 0 1px #e8a13c22" },
+  turnoCardCobrado: { border: "2px solid #3fbf81", boxShadow: "0 0 0 1px #3fbf8122" },
   turnoHeadFijo: { background: "#142046", borderBottom: "1px solid #2c3f6e" },
   turnoHead: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "13px 15px", background: "#111620", borderBottom: "1px solid #1c222b", flexWrap: "wrap" },
   turnoHeadL: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" },
@@ -58,6 +60,9 @@ export const S = {
   obsequioChip: { background: "#2a2012", border: "1px solid #e8a13c66", color: "#f2c98a", borderRadius: 8, padding: "8px 13px", fontSize: 13.5, fontWeight: 700, cursor: "pointer", minHeight: 40 },
   turnoMeta: { fontSize: 13.5, color: "#8b93a0", fontWeight: 700 },
   tagFijo: { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12.5, fontWeight: 700, color: "#9bb8f5", border: "1px solid #5b8def55", borderRadius: 7, padding: "4px 10px" },
+  tagReva: { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12.5, fontWeight: 800, color: "#5ec5e8", border: "1px solid #5ec5e855", background: "#0e2530", borderRadius: 7, padding: "4px 10px" },
+  tagLocal: { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12.5, fontWeight: 700, color: "#9aa0aa", border: "1px solid #3a414d", borderRadius: 7, padding: "4px 10px" },
+  revaBtn: { display: "flex", alignItems: "center", gap: 7, padding: "13px 16px", borderRadius: 11, border: "1.5px solid #5ec5e8", background: "transparent", color: "#5ec5e8", fontWeight: 800, fontSize: 14, cursor: "pointer", minHeight: 46 },
   tagOk: { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, fontWeight: 800, color: "#5fe0a1", border: "1px solid #3fbf8155", background: "#13251b", borderRadius: 8, padding: "5px 11px" },
   tagDebe: { fontSize: 13, fontWeight: 800, color: "#f2b659", border: "1px solid #e8a13c66", background: "#2a2012", borderRadius: 8, padding: "5px 11px" },
   iconBtnSm: { background: "#1a212b", border: "none", color: "#8b93a0", width: 38, height: 38, borderRadius: 9, cursor: "pointer", display: "grid", placeItems: "center" },
