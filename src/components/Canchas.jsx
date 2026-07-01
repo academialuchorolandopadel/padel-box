@@ -7,7 +7,7 @@ import { Stepper } from "./ui";
 export default function Canchas(props) {
   const { activeBox, setActiveBox, config, turnos, cuentas, onNuevoTurno, onPickFijo } = props;
   const boxTurnos = turnos.filter((t) => t.boxId === activeBox)
-    .sort((a, b) => (a.horaInicio || "").localeCompare(b.horaInicio || ""));
+    .sort((a, b) => (b.horaInicio || "").localeCompare(a.horaInicio || ""));
 
   return (
     <div>
@@ -26,9 +26,10 @@ export default function Canchas(props) {
 
       <div style={S.boxBar}>
         <div style={S.boxBarRate}>Hora de cancha: <b style={{ color: "#5fe0a1" }}>{GS(config.valorHora[activeBox])}</b></div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <button style={S.fijoBtn} onClick={onPickFijo}><Repeat size={16} /> Usar turno fijo</button>
-          <button style={S.primaryBtn} onClick={() => onNuevoTurno(activeBox)}><Plus size={18} /> Nuevo turno</button>
+          <button style={S.revaBtn} onClick={() => onNuevoTurno(activeBox, "reva")}><Plus size={18} /> Reserva Reva</button>
+          <button style={S.primaryBtn} onClick={() => onNuevoTurno(activeBox, "admin")}><Plus size={18} /> Reserva local</button>
         </div>
       </div>
 
@@ -36,7 +37,7 @@ export default function Canchas(props) {
         <div style={S.emptyBox}>
           <div style={{ fontSize: 30, marginBottom: 8 }}>🎾</div>
           No hay turnos en {BOXES.find((b) => b.id === activeBox)?.nombre}.<br />
-          Tocá <b style={{ color: "#5fe0a1" }}>Nuevo turno</b> cuando llegue un grupo a jugar.
+          Tocá <b style={{ color: "#5fe0a1" }}>Reserva local</b> o <b style={{ color: "#5ec5e8" }}>Reserva Reva</b> cuando llegue un grupo.
         </div>
       )}
       {boxTurnos.map((t) => <TurnoCard key={t.id} turno={t} {...props} />)}
@@ -56,9 +57,13 @@ function TurnoCard({ turno, cuentas, fijos, onUpdTurno, onBorrarTurno, onReparti
   const tuboAsig = lista.reduce((s, c) => s + (c.tuboPartes || 0), 0);
   const canchaOk = canchaAsig === turno.canchaPartes;
   const tuboOk = tuboAsig === turno.tuboPartes;
+  // Estado de cobro: verde si tiene gente y no queda nada pendiente; naranja si no.
+  const todoCobrado = jugadores > 0 && pendiente === 0;
+  // Los fijos mantienen su marco azul; los eventuales van naranja→verde.
+  const estadoStyle = esFijo ? S.turnoCardFijo : (todoCobrado ? S.turnoCardCobrado : S.turnoCardPendiente);
 
   return (
-    <div style={{ ...S.turnoCard, ...(esFijo ? S.turnoCardFijo : {}) }}>
+    <div style={{ ...S.turnoCard, ...estadoStyle }}>
       <div style={{ ...S.turnoHead, ...(esFijo ? S.turnoHeadFijo : {}) }}>
         <div style={S.turnoHeadL}>
           <Clock size={16} color="#5fe0a1" />
@@ -75,6 +80,8 @@ function TurnoCard({ turno, cuentas, fijos, onUpdTurno, onBorrarTurno, onReparti
             <button style={S.horaBtn} onClick={() => { const nf = sumarMinutos(turno.horaInicio, Math.round(horas * 60) + 30); onUpdTurno(turno, { horaFin: nf }, lista); }}><Plus size={14} /></button>
           </div>
           {esFijo && <span style={S.tagFijo}><Repeat size={12} /> Fijo · {fijo?.clienteNombre || "—"}</span>}
+          {!esFijo && turno.origen === "reva" && <span style={S.tagReva}>Reva</span>}
+          {!esFijo && turno.origen === "admin" && <span style={S.tagLocal}>Local</span>}
         </div>
         <div style={S.turnoHeadR}>
           {jugadores > 0 && (pendiente === 0
