@@ -2,12 +2,12 @@ import {
   addDoc, collection, doc, getDocs, query, updateDoc, where, writeBatch,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { calcCargo, horasEntre, hoyISO } from "../constants";
+import { calcCargo, horasEntre, hoyISO, sumarMinutos } from "../constants";
 
 /** Crea un turno común con los precios actuales de config. */
-export const crearTurno = (boxId, config, origen = "admin") =>
+export const crearTurno = (boxId, config, origen = "admin", horaInicio = "20:00") =>
   addDoc(collection(db, "turnos"), {
-    boxId, fecha: hoyISO(), horaInicio: "20:00", horaFin: "21:00", fijoId: null,
+    boxId, fecha: hoyISO(), horaInicio, horaFin: sumarMinutos(horaInicio, 60), fijoId: null,
     origen,
     canchaTotal: config.valorHora[boxId], canchaPartes: 1,
     tuboActivo: false, tuboPrecio: config.tuboPrecio, tuboPartes: 1, tuboGratis: false,
