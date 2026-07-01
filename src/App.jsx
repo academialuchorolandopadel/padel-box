@@ -140,7 +140,12 @@ function Sistema({ perfil }) {
             <Canchas
               activeBox={activeBox} setActiveBox={setActiveBox} config={config}
               turnos={turnos} cuentas={cuentas} fijos={fijos}
-              onNuevoTurno={(boxId, origen) => svcTurnos.crearTurno(boxId, config, origen)}
+              onNuevoTurno={(boxId, origen) => {
+                // Encadena: el nuevo turno arranca donde terminó el último de esa cancha.
+                const enCancha = turnos.filter((t) => t.boxId === boxId && t.horaFin);
+                const ultimaFin = enCancha.reduce((max, t) => (t.horaFin > max ? t.horaFin : max), "");
+                svcTurnos.crearTurno(boxId, config, origen, ultimaFin || "20:00");
+              }}
               onUpdTurno={(turno, patch, lista) => svcTurnos.actualizarTurno(turno, patch, lista, config)}
               onBorrarTurno={(turnoId) => svcTurnos.borrarTurno(turnoId)}
               onRepartir={(turno, campo, lista) => svcTurnos.repartirParejo(turno, campo, lista)}
