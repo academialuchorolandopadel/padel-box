@@ -140,7 +140,7 @@ function Sistema({ perfil }) {
             <Canchas
               activeBox={activeBox} setActiveBox={setActiveBox} config={config}
               turnos={turnos} cuentas={cuentas} fijos={fijos}
-              onNuevoTurno={(boxId) => svcTurnos.crearTurno(boxId, config)}
+              onNuevoTurno={(boxId, origen) => svcTurnos.crearTurno(boxId, config, origen)}
               onUpdTurno={(turno, patch, lista) => svcTurnos.actualizarTurno(turno, patch, lista, config)}
               onBorrarTurno={(turnoId) => svcTurnos.borrarTurno(turnoId)}
               onRepartir={(turno, campo, lista) => svcTurnos.repartirParejo(turno, campo, lista)}
@@ -170,7 +170,7 @@ function Sistema({ perfil }) {
         {tab === "clientes" && <Clientes clientes={clientes} onVer={setVerCliente} onCrear={svcClientes.crearCliente} />}
         {tab === "stock" && <Stock productos={productos} onReponer={svcVarios.reponerStock} onCrear={svcVarios.crearProducto} onActualizar={svcVarios.actualizarProducto} onBorrar={svcVarios.borrarProducto} esAdmin={esAdmin} />}
         {tab === "gastos" && <Gastos gastos={gastos} onAgregar={svcVarios.crearGasto} onBorrar={svcVarios.borrarGasto} esAdmin={esAdmin} />}
-        {tab === "caja" && <Caja cerradasHoy={cerradasHoy} abiertas={abiertas} gastosHoy={gastos.filter((g) => g.fecha === hoy)} onEdit={setEditing} />}
+        {tab === "caja" && <Caja cerradasHoy={cerradasHoy} abiertas={abiertas} gastosHoy={gastos.filter((g) => g.fecha === hoy)} onEdit={setEditing} onBorrarCuenta={svcCuentas.borrarCuenta} />}
         {tab === "reportes" && esAdmin && <Reportes gastos={gastos} />}
       </main>
 
