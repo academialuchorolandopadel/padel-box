@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { auth } from "./lib/firebase";
 import { S, css } from "./styles";
-import { BOXES, hoyISO, inicioMes, totalCuenta } from "./constants";
+import { BOXES, detectarProblemas, hoyISO, inicioMes, totalCuenta } from "./constants";
 import { useAuth } from "./hooks/useAuth";
 import { useConfig } from "./hooks/useConfig";
 import { useColeccion } from "./hooks/useColeccion";
@@ -70,17 +70,45 @@ function Sistema({ perfil }) {
   const config = useConfig();
 
   /* --- suscripciones en vivo (acotadas para no leer de más) --- */
-  const { docs: turnos } = useColeccion("turnos", [where("fecha", "==", hoy)], [hoy]);
+  const [verFecha, setVerFecha] = useState(null); // null = viendo "hoy"; si no, "YYYY-MM-DD"
+  const esHoy = !verFecha;
+
+  const { docs: turnosHoy } = useColeccion("turnos", [where("fecha", "==", hoy)], [hoy]);
+  // Turnos de otro día: la consulta solo "pega" cuando realmente estás mirando otra fecha
+  // (si no, busca una fecha que no existe y no gasta lecturas de más).
+  const { docs: turnosOtroDia } = useColeccion("turnos", [where("fecha", "==", verFecha || "—")], [verFecha]);
+  const turnos = esHoy ? turnosHoy : turnosOtroDia;
+
   const { docs: abiertas } = useColeccion("cuentas", [where("estado", "==", "abierta")]);
   const { docs: cerradasHoy } = useColeccion("cuentas",
     [where("estado", "==", "cerrada"), where("fecha", "==", hoy)], [hoy]);
+  const { docs: cerradasOtroDia } = useColeccion("cuentas",
+    [where("estado", "==", "cerrada"), where("fecha", "==", verFecha || "—")], [verFecha]);
+  const cerradasVista = esHoy ? cerradasHoy : cerradasOtroDia;
+
   const { docs: clientes } = useColeccion("clientes");
   const { docs: productos, cargando: cargandoProd } = useColeccion("productos");
   const { docs: fijos } = useColeccion("fijos");
   const { docs: gastos } = useColeccion("gastos",
     [where("fecha", ">=", inicioMes()), where("fecha", "<=", hoy)], [hoy]);
 
-  const cuentas = useMemo(() => [...abiertas, ...cerradasHoy], [abiertas, cerradasHoy]);
+  // Últimos 30 días: para avisar de partes sin asignar o cuentas sin cobrar que
+  // quedaron colgadas. Acotado a 30 días a propósito, para no barrer todo el
+  // historial (eso sería cada vez más lento y más caro a medida que crece el club).
+  const haceUnMes = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, [hoy]);
+  const { docs: turnosMes } = useColeccion("turnos",
+    [where("fecha", ">=", haceUnMes), where("fecha", "<=", hoy)], [haceUnMes, hoy]);
+  const { docs: cerradasMes } = useColeccion("cuentas",
+    [where("estado", "==", "cerrada"), where("fecha", ">=", haceUnMes), where("fecha", "<=", hoy)], [haceUnMes, hoy]);
+
+  const cuentas = useMemo(() => [...abiertas, ...cerradasVista], [abiertas, cerradasVista]);
+  const cuentasMes = useMemo(() => [...abiertas, ...cerradasMes], [abiertas, cerradasMes]);
+  const problemas = useMemo(() => detectarProblemas(turnosMes, cuentasMes), [turnosMes, cuentasMes]);
+
   const stockBajo = productos.filter((p) => p.categoria !== "Servicio" && p.stockActual <= p.stockMinimo).length;
   const cobradoHoy = cerradasHoy.reduce((s, c) => s + totalCuenta(c), 0);
 
@@ -140,9 +168,12 @@ function Sistema({ perfil }) {
             <Canchas
               activeBox={activeBox} setActiveBox={setActiveBox} config={config}
               turnos={turnos} cuentas={cuentas} fijos={fijos}
+              fechaVista={verFecha || hoy} esHoy={esHoy}
+              onCambiarFecha={setVerFecha} onVolverHoy={() => setVerFecha(null)}
               onNuevoTurno={(boxId, origen) => {
                 // Encadena: el nuevo turno arranca donde terminó el último de esa cancha.
-                const enCancha = turnos.filter((t) => t.boxId === boxId && t.horaFin);
+                // Siempre en base a los turnos de HOY (no a los de un día que estés mirando).
+                const enCancha = turnosHoy.filter((t) => t.boxId === boxId && t.horaFin);
                 const ultimaFin = enCancha.reduce((max, t) => (t.horaFin > max ? t.horaFin : max), "");
                 svcTurnos.crearTurno(boxId, config, origen, ultimaFin || "20:00");
               }}
@@ -153,7 +184,7 @@ function Sistema({ perfil }) {
               onPickFijo={() => setPickFijo(true)}
               onEdit={setEditing}
               onNueva={(turno) => setEditing({
-                turnoId: turno.id, boxId: turno.boxId, fecha: hoy,
+                turnoId: turno.id, boxId: turno.boxId, fecha: turno.fecha,
                 clienteId: null, clienteNombre: "",
                 canchaPartes: 1, tuboPartes: 0,
                 cargoCancha: Math.round(turno.canchaTotal / turno.canchaPartes) || 0,
@@ -176,6 +207,8 @@ function Sistema({ perfil }) {
         {tab === "stock" && <Stock productos={productos} onReponer={svcVarios.reponerStock} onCrear={svcVarios.crearProducto} onActualizar={svcVarios.actualizarProducto} onBorrar={svcVarios.borrarProducto} esAdmin={esAdmin} />}
         {tab === "gastos" && <Gastos gastos={gastos} onAgregar={svcVarios.crearGasto} onBorrar={svcVarios.borrarGasto} esAdmin={esAdmin} />}
         {tab === "caja" && <Caja cerradasHoy={cerradasHoy} abiertas={abiertas} gastosHoy={gastos.filter((g) => g.fecha === hoy)} onEdit={setEditing} onBorrarCuenta={svcCuentas.borrarCuenta}
+          problemas={problemas}
+          onVerFecha={(fecha) => { setVerFecha(fecha); setTab("canchas"); }}
           onNuevaVenta={() => setEditing({
             turnoId: null, boxId: null, fecha: hoy,
             clienteId: null, clienteNombre: "",
