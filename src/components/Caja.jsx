@@ -1,9 +1,9 @@
 import React, { useMemo } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { S } from "../styles";
-import { BOXES, GS, PAGOS, totalCuenta } from "../constants";
+import { BOXES, GS, PAGOS, formatFechaLinda, totalCuenta } from "../constants";
 
-export default function Caja({ cerradasHoy, abiertas, gastosHoy, onEdit, onBorrarCuenta, onNuevaVenta }) {
+export default function Caja({ cerradasHoy, abiertas, gastosHoy, onEdit, onBorrarCuenta, onNuevaVenta, problemas, onVerFecha }) {
   const porPago = useMemo(() => {
     const m = {}; Object.keys(PAGOS).forEach((k) => (m[k] = 0));
     cerradasHoy.forEach((c) => (m[c.formaPago] = (m[c.formaPago] || 0) + totalCuenta(c)));
@@ -13,6 +13,11 @@ export default function Caja({ cerradasHoy, abiertas, gastosHoy, onEdit, onBorra
   const pendiente = abiertas.reduce((s, c) => s + totalCuenta(c), 0);
   const salidas = gastosHoy.reduce((s, g) => s + g.importe, 0);
   const boxN = (id) => BOXES.find((b) => b.id === id)?.nombre || "—";
+  const porDia = useMemo(() => {
+    const m = {};
+    (problemas || []).forEach((p) => { (m[p.fecha] ||= []).push(p); });
+    return Object.entries(m).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [problemas]);
 
   return (
     <div>
@@ -21,6 +26,23 @@ export default function Caja({ cerradasHoy, abiertas, gastosHoy, onEdit, onBorra
         <button style={S.primaryBtn} onClick={onNuevaVenta}><Plus size={17} /> Venta rápida</button>
       </div>
       <p style={S.pageHint}>Para alguien que compra algo sin estar jugando (no ocupa cancha, se cobra en el momento).</p>
+
+      {porDia.length > 0 && (
+        <div style={{ ...S.alertBar, flexDirection: "column", alignItems: "flex-start", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+            <AlertTriangle size={17} />
+            <b>Quedaron cosas pendientes en los últimos 30 días — tocá un día para revisarlo</b>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {porDia.map(([fecha, lista]) => (
+              <button key={fecha} style={S.diaProblemaChip} onClick={() => onVerFecha(fecha)}>
+                {formatFechaLinda(fecha)} · {lista.length} {lista.length === 1 ? "turno" : "turnos"}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={S.cajaTop}>
         {Object.entries(PAGOS).map(([k, v]) => (
           <div key={k} style={S.cajaCard}>
