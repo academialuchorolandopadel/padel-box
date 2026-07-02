@@ -39,6 +39,10 @@ export const S = {
   boxTabCount: { fontSize: 12.5, background: "#e8a13c", color: "#1a1206", borderRadius: 20, padding: "1px 8px", fontWeight: 800 },
   boxBar: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 },
   boxBarRate: { fontSize: 14, color: "#aeb4be" },
+  fechaBar: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 14 },
+  fechaInput: { background: "#181f29", border: "1px solid #2a313c", color: "#eef0f3", borderRadius: 9, padding: "9px 11px", fontSize: 14, fontWeight: 600, colorScheme: "dark" },
+  fechaViendo: { display: "flex", alignItems: "center", gap: 10, background: "#1c1530", border: "1px solid #9b7bff55", color: "#c3aeff", borderRadius: 9, padding: "8px 13px", fontSize: 13.5, fontWeight: 700 },
+  fechaVolver: { background: "#9b7bff", color: "#140b2b", border: "none", borderRadius: 7, padding: "6px 11px", fontWeight: 800, fontSize: 12.5, cursor: "pointer" },
   primaryBtn: { display: "flex", alignItems: "center", gap: 7, padding: "13px 18px", borderRadius: 11, border: "none", background: "#3fbf81", color: "#06150d", fontWeight: 800, fontSize: 15, cursor: "pointer", minHeight: 46 },
   fijoBtn: { display: "flex", alignItems: "center", gap: 7, padding: "13px 16px", borderRadius: 11, border: "1.5px solid #5b8def", background: "transparent", color: "#9bb8f5", fontWeight: 800, fontSize: 14, cursor: "pointer", minHeight: 46 },
 
@@ -58,6 +62,7 @@ export const S = {
   obsequiosBar: { display: "flex", flexDirection: "column", gap: 8, padding: "11px 15px", background: "#221a0e", borderBottom: "1px solid #2a2012" },
   obsequiosLbl: { display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#f2c98a", fontWeight: 700 },
   obsequioChip: { background: "#2a2012", border: "1px solid #e8a13c66", color: "#f2c98a", borderRadius: 8, padding: "8px 13px", fontSize: 13.5, fontWeight: 700, cursor: "pointer", minHeight: 40 },
+  diaProblemaChip: { background: "#2a1a10", border: "1px solid #f0a45b66", color: "#f2c98a", borderRadius: 8, padding: "8px 13px", fontSize: 13, fontWeight: 700, cursor: "pointer", minHeight: 40, textTransform: "capitalize" },
   turnoMeta: { fontSize: 13.5, color: "#8b93a0", fontWeight: 700 },
   tagFijo: { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12.5, fontWeight: 700, color: "#9bb8f5", border: "1px solid #5b8def55", borderRadius: 7, padding: "4px 10px" },
   tagReva: { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12.5, fontWeight: 800, color: "#5ec5e8", border: "1px solid #5ec5e855", background: "#0e2530", borderRadius: 7, padding: "4px 10px" },
