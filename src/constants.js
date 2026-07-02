@@ -61,6 +61,36 @@ export const textoDuracion = (horas) => {
   return `${h} h ${m} min`;
 };
 
+// Formatea "2026-07-01" -> "miércoles 1 de julio". OJO: arma la fecha con
+// componentes locales (año, mes, día), NUNCA con new Date("YYYY-MM-DD") a
+// secas, porque eso el navegador lo interpreta en UTC y puede mostrar el
+// día equivocado (el mismo tipo de bug que ya corregimos en hoyISO).
+export const formatFechaLinda = (fechaISO) => {
+  const [y, m, d] = fechaISO.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("es-PY", { weekday: "long", day: "numeric", month: "long" });
+};
+
+// Revisa turnos de un rango de días y marca los que quedaron con partes de
+// cancha o tubo sin asignar (habiendo plata de por medio) o con cuentas
+// abiertas sin cobrar. Sirve para el aviso de "quedó algo pendiente".
+export const detectarProblemas = (turnos, cuentas) => {
+  const porTurno = {};
+  cuentas.forEach((c) => { (porTurno[c.turnoId] ||= []).push(c); });
+  const problemas = [];
+  turnos.forEach((t) => {
+    const lista = porTurno[t.id] || [];
+    const canchaAsig = lista.reduce((s, c) => s + (c.canchaPartes || 0), 0);
+    const tuboAsig = lista.reduce((s, c) => s + (c.tuboPartes || 0), 0);
+    const canchaProblema = (t.canchaTotal || 0) > 0 && canchaAsig !== (t.canchaPartes || 0);
+    const tuboProblema = !!t.tuboActivo && (t.tuboPrecio || 0) > 0 && tuboAsig !== (t.tuboPartes || 0);
+    const pendiente = lista.filter((c) => c.estado === "abierta").reduce((s, c) => s + totalCuenta(c), 0);
+    if (canchaProblema || tuboProblema || pendiente > 0) {
+      problemas.push({ turnoId: t.id, fecha: t.fecha, boxId: t.boxId, canchaProblema, tuboProblema, pendiente });
+    }
+  });
+  return problemas;
+};
+
 export const perPart = (total, partes) => (partes > 0 ? total / partes : 0);
 export const calcCargo = (partes, total, partesTotal) =>
   Math.round((partes || 0) * perPart(total, partesTotal));
