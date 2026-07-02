@@ -1,11 +1,12 @@
 import React from "react";
 import { Check, Clock, Gift, Minus, Plus, Repeat, RotateCcw, StickyNote, Trash2 } from "lucide-react";
 import { S } from "../styles";
-import { BOXES, GS, PAGOS, horasEntre, perPart, sumarMinutos, textoDuracion, totalCuenta } from "../constants";
+import { BOXES, GS, PAGOS, formatFechaLinda, horasEntre, hoyISO, perPart, sumarMinutos, textoDuracion, totalCuenta } from "../constants";
 import { Stepper } from "./ui";
 
 export default function Canchas(props) {
-  const { activeBox, setActiveBox, config, turnos, cuentas, onNuevoTurno, onPickFijo } = props;
+  const { activeBox, setActiveBox, config, turnos, cuentas, onNuevoTurno, onPickFijo, fechaVista, esHoy, onCambiarFecha, onVolverHoy } = props;
+  const hoy = hoyISO();
   const boxTurnos = turnos.filter((t) => t.boxId === activeBox)
     .sort((a, b) => (b.horaInicio || "").localeCompare(a.horaInicio || ""));
 
@@ -24,20 +25,38 @@ export default function Canchas(props) {
         })}
       </div>
 
+      <div style={S.fechaBar}>
+        <input type="date" value={fechaVista} max={hoy}
+          onChange={(e) => onCambiarFecha(e.target.value === hoy ? null : e.target.value)}
+          style={S.fechaInput} />
+        {!esHoy && (
+          <span style={S.fechaViendo}>
+            Viendo {formatFechaLinda(fechaVista)}
+            <button style={S.fechaVolver} onClick={onVolverHoy}>Volver a hoy</button>
+          </span>
+        )}
+      </div>
+
       <div style={S.boxBar}>
         <div style={S.boxBarRate}>Hora de cancha: <b style={{ color: "#5fe0a1" }}>{GS(config.valorHora[activeBox])}</b></div>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button style={S.fijoBtn} onClick={onPickFijo}><Repeat size={16} /> Usar turno fijo</button>
-          <button style={S.revaBtn} onClick={() => onNuevoTurno(activeBox, "reva")}><Plus size={18} /> Reserva Reva</button>
-          <button style={S.primaryBtn} onClick={() => onNuevoTurno(activeBox, "admin")}><Plus size={18} /> Reserva local</button>
-        </div>
+        {esHoy && (
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button style={S.fijoBtn} onClick={onPickFijo}><Repeat size={16} /> Usar turno fijo</button>
+            <button style={S.revaBtn} onClick={() => onNuevoTurno(activeBox, "reva")}><Plus size={18} /> Reserva Reva</button>
+            <button style={S.primaryBtn} onClick={() => onNuevoTurno(activeBox, "admin")}><Plus size={18} /> Reserva local</button>
+          </div>
+        )}
       </div>
 
       {boxTurnos.length === 0 && (
         <div style={S.emptyBox}>
           <div style={{ fontSize: 30, marginBottom: 8 }}>🎾</div>
-          No hay turnos en {BOXES.find((b) => b.id === activeBox)?.nombre}.<br />
-          Tocá <b style={{ color: "#5fe0a1" }}>Reserva local</b> o <b style={{ color: "#5ec5e8" }}>Reserva Reva</b> cuando llegue un grupo.
+          {esHoy ? (
+            <>No hay turnos en {BOXES.find((b) => b.id === activeBox)?.nombre}.<br />
+            Tocá <b style={{ color: "#5fe0a1" }}>Reserva local</b> o <b style={{ color: "#5ec5e8" }}>Reserva Reva</b> cuando llegue un grupo.</>
+          ) : (
+            <>No hubo turnos en {BOXES.find((b) => b.id === activeBox)?.nombre} ese día.</>
+          )}
         </div>
       )}
       {boxTurnos.map((t) => <TurnoCard key={t.id} turno={t} {...props} />)}
