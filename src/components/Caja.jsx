@@ -1,9 +1,9 @@
 import React, { useMemo } from "react";
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { S } from "../styles";
 import { BOXES, GS, PAGOS, totalCuenta } from "../constants";
 
-export default function Caja({ cerradasHoy, abiertas, gastosHoy, onEdit, onBorrarCuenta }) {
+export default function Caja({ cerradasHoy, abiertas, gastosHoy, onEdit, onBorrarCuenta, onNuevaVenta }) {
   const porPago = useMemo(() => {
     const m = {}; Object.keys(PAGOS).forEach((k) => (m[k] = 0));
     cerradasHoy.forEach((c) => (m[c.formaPago] = (m[c.formaPago] || 0) + totalCuenta(c)));
@@ -16,7 +16,11 @@ export default function Caja({ cerradasHoy, abiertas, gastosHoy, onEdit, onBorra
 
   return (
     <div>
-      <h2 style={S.h2}>Caja del día</h2>
+      <div style={S.pageHead}>
+        <h2 style={S.h2}>Caja del día</h2>
+        <button style={S.primaryBtn} onClick={onNuevaVenta}><Plus size={17} /> Venta rápida</button>
+      </div>
+      <p style={S.pageHint}>Para alguien que compra algo sin estar jugando (no ocupa cancha, se cobra en el momento).</p>
       <div style={S.cajaTop}>
         {Object.entries(PAGOS).map(([k, v]) => (
           <div key={k} style={S.cajaCard}>
