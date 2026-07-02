@@ -4,7 +4,7 @@ import { S } from "../styles";
 import { CATS, GS, PAGOS, totalCuenta } from "../constants";
 import { Stepper } from "./ui";
 
-export default function CuentaEditor({ cuenta, boxNombre, productos, clientes, onCrearCliente, onUpdCliente, onClose, onSave }) {
+export default function CuentaEditor({ cuenta, boxNombre, sinTurno, productos, clientes, onCrearCliente, onUpdCliente, onClose, onSave }) {
   const [clienteId, setClienteId] = useState(cuenta.clienteId);
   const [clienteNombre, setClienteNombre] = useState(cuenta.clienteNombre);
   const [items, setItems] = useState(cuenta.items || []);
@@ -41,8 +41,12 @@ export default function CuentaEditor({ cuenta, boxNombre, productos, clientes, o
     onUpdCliente(cliente.id, { pendientes: np });
   };
 
-  const armar = () => ({ ...cuenta, clienteId, clienteNombre: clienteNombre.trim(), items, notas, formaPago });
+  const armar = () => ({
+    ...cuenta, clienteId, items, notas, formaPago,
+    clienteNombre: clienteNombre.trim() || (sinTurno ? "Venta mostrador" : ""),
+  });
   const guardar = async (cobrar) => {
+    if (sinTurno && cobrar && items.length === 0) { alert("Agregá al menos un producto antes de cobrar."); return; }
     setGuardando(true);
     try { await onSave(armar(), cobrar); }
     catch (e) { console.error(e); alert("No se pudo guardar. Revisá la conexión."); }
@@ -54,10 +58,10 @@ export default function CuentaEditor({ cuenta, boxNombre, productos, clientes, o
       <div style={S.modal} onClick={(e) => e.stopPropagation()}>
         <div style={S.modalHead}>
           <div style={{ flex: 1, position: "relative" }}>
-            <div style={S.modalSub}>{boxNombre} · {cuenta.estado === "cerrada" ? "esta cuenta ya fue cobrada" : "cuenta abierta — se puede seguir cargando"}</div>
+            <div style={S.modalSub}>{sinTurno ? "Venta rápida — no está jugando" : `${boxNombre} · ${cuenta.estado === "cerrada" ? "esta cuenta ya fue cobrada" : "cuenta abierta — se puede seguir cargando"}`}</div>
             <div style={S.cliField}>
               <Search size={17} color="#7a808a" />
-              <input placeholder="¿Quién es? Buscá o escribí el nombre…" value={showCli ? busqCli : clienteNombre}
+              <input placeholder={sinTurno ? "¿Quién es? (opcional, dejalo vacío para venta anónima)" : "¿Quién es? Buscá o escribí el nombre…"} value={showCli ? busqCli : clienteNombre}
                 onFocus={() => { setShowCli(true); setBusqCli(""); }}
                 onBlur={() => setTimeout(() => setShowCli(false), 150)}
                 onChange={(e) => { setBusqCli(e.target.value); setClienteNombre(e.target.value); setClienteId(null); }} style={S.cliInput} />
@@ -117,9 +121,9 @@ export default function CuentaEditor({ cuenta, boxNombre, productos, clientes, o
 
           <div style={S.ticket}>
             <div style={S.ticketLines} className="ticketLines">
-              <div style={S.fixedLine}><span>Su parte de cancha</span><b>{GS(cuenta.cargoCancha)}</b></div>
-              {(cuenta.cargoTubo > 0 || cuenta.tuboPartes > 0) && <div style={S.fixedLine}><span>Su parte de tubo</span><b>{GS(cuenta.cargoTubo)}</b></div>}
-              <div style={S.fixedHint}>Las partes se cambian desde la fila del turno</div>
+              {!sinTurno && <div style={S.fixedLine}><span>Su parte de cancha</span><b>{GS(cuenta.cargoCancha)}</b></div>}
+              {!sinTurno && (cuenta.cargoTubo > 0 || cuenta.tuboPartes > 0) && <div style={S.fixedLine}><span>Su parte de tubo</span><b>{GS(cuenta.cargoTubo)}</b></div>}
+              {!sinTurno && <div style={S.fixedHint}>Las partes se cambian desde la fila del turno</div>}
               {items.length === 0 && <div style={S.ticketEmpty}>Lo que consuma aparece acá.<br />Tocá los productos de la izquierda.</div>}
               {items.map((x) => (
                 <div key={x.nombre} style={S.lineRow}>
@@ -157,8 +161,8 @@ export default function CuentaEditor({ cuenta, boxNombre, productos, clientes, o
             </div>
 
             <div style={S.actions}>
-              <button style={S.saveOpen} disabled={guardando} onClick={() => guardar(false)}>Guardar y dejar abierta</button>
-              <button style={S.confirmBtn} disabled={guardando} onClick={() => guardar(true)}>
+              {!sinTurno && <button style={S.saveOpen} disabled={guardando} onClick={() => guardar(false)}>Guardar y dejar abierta</button>}
+              <button style={{ ...S.confirmBtn, ...(sinTurno ? { flex: 1 } : {}) }} disabled={guardando} onClick={() => guardar(true)}>
                 <Check size={19} /> {guardando ? "Guardando…" : `Cobrar ${GS(total)}`}
               </button>
             </div>
