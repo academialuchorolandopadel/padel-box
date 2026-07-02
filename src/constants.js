@@ -20,7 +20,17 @@ export const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sáb
 
 /* ----- helpers de fecha y dinero ----- */
 export const GS = (n) => "₲ " + Math.round(n || 0).toLocaleString("es-PY");
-export const hoyISO = () => new Date().toISOString().slice(0, 10);
+// OJO: usar SIEMPRE fecha local, nunca toISOString() a secas (esa da la fecha
+// en UTC). Paraguay está 4 horas atrás de UTC, así que entre las 20:00 y la
+// medianoche, toISOString() ya "cree" que es el día siguiente. Eso hacía que
+// los turnos cargados de tarde desaparecieran de la vista al entrar de noche.
+export const hoyISO = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
 export const mesISO = () => hoyISO().slice(0, 7);
 export const anioISO = () => hoyISO().slice(0, 4);
 export const inicioMes = () => mesISO() + "-01";
