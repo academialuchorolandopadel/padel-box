@@ -175,7 +175,13 @@ function Sistema({ perfil }) {
         {tab === "clientes" && <Clientes clientes={clientes} onVer={setVerCliente} onCrear={svcClientes.crearCliente} />}
         {tab === "stock" && <Stock productos={productos} onReponer={svcVarios.reponerStock} onCrear={svcVarios.crearProducto} onActualizar={svcVarios.actualizarProducto} onBorrar={svcVarios.borrarProducto} esAdmin={esAdmin} />}
         {tab === "gastos" && <Gastos gastos={gastos} onAgregar={svcVarios.crearGasto} onBorrar={svcVarios.borrarGasto} esAdmin={esAdmin} />}
-        {tab === "caja" && <Caja cerradasHoy={cerradasHoy} abiertas={abiertas} gastosHoy={gastos.filter((g) => g.fecha === hoy)} onEdit={setEditing} onBorrarCuenta={svcCuentas.borrarCuenta} />}
+        {tab === "caja" && <Caja cerradasHoy={cerradasHoy} abiertas={abiertas} gastosHoy={gastos.filter((g) => g.fecha === hoy)} onEdit={setEditing} onBorrarCuenta={svcCuentas.borrarCuenta}
+          onNuevaVenta={() => setEditing({
+            turnoId: null, boxId: null, fecha: hoy,
+            clienteId: null, clienteNombre: "",
+            canchaPartes: 0, tuboPartes: 0, cargoCancha: 0, cargoTubo: 0,
+            items: [], notas: "", estado: "abierta", formaPago: null,
+          })} />}
         {tab === "reportes" && esAdmin && <Reportes gastos={gastos} />}
       </main>
 
@@ -215,6 +221,7 @@ function Sistema({ perfil }) {
       {editing && (
         <CuentaEditor
           cuenta={editing}
+          sinTurno={!editing.boxId}
           boxNombre={BOXES.find((b) => b.id === editing.boxId)?.nombre || ""}
           productos={productos} clientes={clientes}
           onCrearCliente={svcClientes.crearCliente}
