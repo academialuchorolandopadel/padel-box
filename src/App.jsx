@@ -80,10 +80,12 @@ function Sistema({ perfil }) {
   const turnos = esHoy ? turnosHoy : turnosOtroDia;
 
   const { docs: abiertas } = useColeccion("cuentas", [where("estado", "==", "abierta")]);
-  const { docs: cerradasHoy } = useColeccion("cuentas",
-    [where("estado", "==", "cerrada"), where("fecha", "==", hoy)], [hoy]);
-  const { docs: cerradasOtroDia } = useColeccion("cuentas",
-    [where("estado", "==", "cerrada"), where("fecha", "==", verFecha || "—")], [verFecha]);
+  // Cerradas: traemos por fecha y filtramos "cerrada" en código, para no depender
+  // de índices compuestos (estado + fecha) que hay que crear a mano en Firestore.
+  const { docs: cerradasHoyRaw } = useColeccion("cuentas", [where("fecha", "==", hoy)], [hoy]);
+  const cerradasHoy = useMemo(() => cerradasHoyRaw.filter((c) => c.estado === "cerrada"), [cerradasHoyRaw]);
+  const { docs: cerradasOtroDiaRaw } = useColeccion("cuentas", [where("fecha", "==", verFecha || "—")], [verFecha]);
+  const cerradasOtroDia = useMemo(() => cerradasOtroDiaRaw.filter((c) => c.estado === "cerrada"), [cerradasOtroDiaRaw]);
   const cerradasVista = esHoy ? cerradasHoy : cerradasOtroDia;
 
   const { docs: clientes } = useColeccion("clientes");
@@ -102,8 +104,9 @@ function Sistema({ perfil }) {
   }, [hoy]);
   const { docs: turnosMes } = useColeccion("turnos",
     [where("fecha", ">=", haceUnMes), where("fecha", "<=", hoy)], [haceUnMes, hoy]);
-  const { docs: cerradasMes } = useColeccion("cuentas",
-    [where("estado", "==", "cerrada"), where("fecha", ">=", haceUnMes), where("fecha", "<=", hoy)], [haceUnMes, hoy]);
+  const { docs: cerradasMesRaw } = useColeccion("cuentas",
+    [where("fecha", ">=", haceUnMes), where("fecha", "<=", hoy)], [haceUnMes, hoy]);
+  const cerradasMes = useMemo(() => cerradasMesRaw.filter((c) => c.estado === "cerrada"), [cerradasMesRaw]);
 
   const cuentas = useMemo(() => [...abiertas, ...cerradasVista], [abiertas, cerradasVista]);
   const cuentasMes = useMemo(() => [...abiertas, ...cerradasMes], [abiertas, cerradasMes]);
