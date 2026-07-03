@@ -13,12 +13,15 @@ export default function Reportes() {
   const inicio = primerDiaMes(mes);
   const fin = ultimoDiaMes(mes);
 
-  // Consultas acotadas al mes ELEGIDO (no siempre el actual)
-  const { docs: delMes } = useColeccion(
+  // Traemos por rango de fecha (sin índice compuesto) y filtramos el estado
+  // en el código. Para el volumen de un mes esto es instantáneo, y así el
+  // reporte no depende de que exista un índice compuesto en Firestore.
+  const { docs: cuentasRango } = useColeccion(
     "cuentas",
-    [where("estado", "==", "cerrada"), where("fecha", ">=", inicio), where("fecha", "<=", fin)],
+    [where("fecha", ">=", inicio), where("fecha", "<=", fin)],
     [mes]
   );
+  const delMes = useMemo(() => cuentasRango.filter((c) => c.estado === "cerrada"), [cuentasRango]);
   const { docs: gastosMes } = useColeccion(
     "gastos",
     [where("fecha", ">=", inicio), where("fecha", "<=", fin)],
