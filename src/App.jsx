@@ -215,7 +215,7 @@ function Sistema({ perfil }) {
             canchaPartes: 0, tuboPartes: 0, cargoCancha: 0, cargoTubo: 0,
             items: [], notas: "", estado: "abierta", formaPago: null,
           })} />}
-        {tab === "reportes" && esAdmin && <Reportes gastos={gastos} />}
+        {tab === "reportes" && esAdmin && <Reportes />}
       </main>
 
       <nav style={S.bottomNav} className="bottomNav">
