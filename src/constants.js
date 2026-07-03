@@ -70,6 +70,18 @@ export const formatFechaLinda = (fechaISO) => {
   return new Date(y, m - 1, d).toLocaleDateString("es-PY", { weekday: "long", day: "numeric", month: "long" });
 };
 
+// Primer y último día de un mes elegido ("2026-07" -> "2026-07-01" / "2026-07-31").
+// Sirve para acotar consultas a CUALQUIER mes, no solo al actual.
+export const primerDiaMes = (ym) => `${ym}-01`;
+export const ultimoDiaMes = (ym) => {
+  const [y, m] = ym.split("-").map(Number);
+  return `${ym}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`;
+};
+export const formatMesLindo = (ym) => {
+  const [y, m] = ym.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("es-PY", { month: "long", year: "numeric" });
+};
+
 // Revisa turnos de un rango de días y marca los que quedaron con partes de
 // cancha o tubo sin asignar (habiendo plata de por medio) o con cuentas
 // abiertas sin cobrar. Sirve para el aviso de "quedó algo pendiente".
