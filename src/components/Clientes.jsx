@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, ChevronRight, Gift, Phone, Plus, Search, StickyNote, TrendingUp, X } from "lucide-react";
-import { collection, getDocs, limit, orderBy, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { S } from "../styles";
 import { GS, anioISO, mesISO, totalCuenta } from "../constants";
@@ -78,19 +78,22 @@ export function ClienteDetalle({ cliente, onUpd, onClose }) {
   const [historial, setHistorial] = useState([]);
   const [cargandoHist, setCargandoHist] = useState(true);
 
-  // Consulta puntual del historial (no suscripción: se lee una vez al abrir la ficha)
+  // Consulta puntual del historial (no suscripción: se lee una vez al abrir la ficha).
+  // Traemos por clienteId solamente (una sola condición, sin índice compuesto) y
+  // filtramos "cerrada" + ordenamos por fecha en el código. Para el volumen de un
+  // cliente (decenas o pocos cientos de cuentas) esto es instantáneo, y así no
+  // dependemos de un índice compuesto que haya que crear a mano en Firestore.
   useEffect(() => {
     (async () => {
       try {
-        const qy = query(
-          collection(db, "cuentas"),
-          where("clienteId", "==", cliente.id),
-          where("estado", "==", "cerrada"),
-          orderBy("fecha", "desc"),
-          limit(100)
-        );
+        const qy = query(collection(db, "cuentas"), where("clienteId", "==", cliente.id));
         const snap = await getDocs(qy);
-        setHistorial(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        const todas = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const cerradas = todas
+          .filter((c) => c.estado === "cerrada")
+          .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""))
+          .slice(0, 100);
+        setHistorial(cerradas);
       } catch (e) { console.error(e); }
       setCargandoHist(false);
     })();
