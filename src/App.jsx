@@ -201,9 +201,10 @@ function Sistema({ perfil }) {
         )}
         {tab === "fijos" && (
           <Fijos fijos={fijos} clientes={clientes} productos={productos} esAdmin={esAdmin}
-            onAgregar={svcFijos.crearFijo} onBorrar={svcFijos.borrarFijo}
+            onAgregar={(f, cobro) => svcFijos.crearFijo(f, cobro)} onBorrar={svcFijos.borrarFijo}
             onActualizar={svcFijos.actualizarFijo}
-            onRenovar={async (f) => { await svcFijos.renovarFijo(f); }}
+            onRenovar={async (f, cobro) => { await svcFijos.renovarFijo(f, cobro); }}
+            onRegistrarCobro={async (f, precio, formaPago) => { await svcFijos.registrarCobroPaquete(f, precio, formaPago); }}
             onUsar={async (f, horas) => { await svcFijos.usarFijo(f, horas); setActiveBox(f.boxId); setTab("canchas"); }} />
         )}
         {tab === "clientes" && <Clientes clientes={clientes} onVer={setVerCliente} onCrear={svcClientes.crearCliente} />}
