@@ -1,5 +1,5 @@
 import {
-  addDoc, collection, doc, getDoc, updateDoc, writeBatch,
+  collection, doc, getDoc, updateDoc, writeBatch,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { hoyISO, sumarMinutos } from "../constants";
@@ -15,13 +15,47 @@ const copiaObsequios = (obs) =>
   (obs || []).filter((o) => o.cantidad > 0)
     .map((o) => ({ productoId: o.productoId, nombre: o.nombre, cantidad: Number(o.cantidad) }));
 
-export const crearFijo = (fijo) =>
-  addDoc(collection(db, "fijos"), {
+/* El cobro del paquete se guarda como una CUENTA CERRADA normal. Así entra solo
+   en todos lados (ingresos del mes, forma de pago, día por día, cobrado hoy)
+   sin tener que tocar el resto del sistema. La marca concepto:"paquete" permite
+   mostrarlo como línea propia en el reporte, separado del alquiler por hora. */
+const cuentaPaquete = (fijo, precio, formaPago) => ({
+  turnoId: null,
+  boxId: fijo.boxId || null,
+  fijoId: fijo.id || null,
+  concepto: "paquete",
+  fecha: hoyISO(),
+  clienteId: fijo.clienteId || null,
+  clienteNombre: fijo.clienteNombre || "—",
+  canchaPartes: 0,
+  tuboPartes: 0,
+  cargoCancha: Number(precio) || 0, // el total del paquete va acá para que totalCuenta lo sume
+  cargoTubo: 0,
+  items: [],
+  notas: `Paquete de ${fijo.horasTotal || "?"} h`,
+  estado: "cerrada",
+  formaPago,
+  total: Number(precio) || 0,
+  creadoTs: Date.now(),
+});
+
+/* Crea el paquete y, en la misma operación, registra su cobro (siempre se paga
+   por adelantado). Van juntos en un batch para que nunca quede un paquete
+   creado sin su ingreso registrado, ni al revés. */
+export const crearFijo = async (fijo, cobro) => {
+  const batch = writeBatch(db);
+  const fijoRef = doc(collection(db, "fijos"));
+  batch.set(fijoRef, {
     ...fijo,
     obsequiosRestante: copiaObsequios(fijo.obsequios), // arranca el mes con todo el saldo
     estado: "activo",
     creado: hoyISO(),
   });
+  if (cobro && Number(cobro.precio) > 0) {
+    batch.set(doc(collection(db, "cuentas")), cuentaPaquete({ ...fijo, id: fijoRef.id }, cobro.precio, cobro.formaPago));
+  }
+  await batch.commit();
+};
 
 /* Al editar: si cambió la receta de obsequios, se respeta el saldo restante
    que el admin haya fijado; si no se toca, queda el que estaba. */
@@ -33,14 +67,32 @@ export const borrarFijo = async (id) => {
   await batch.commit();
 };
 
-/* Renueva el mes: rellena horas y vuelve a cargar el saldo de obsequios desde la receta. */
-export const renovarFijo = (fijo) =>
-  updateDoc(doc(db, "fijos", fijo.id), {
+/* Renueva el mes: rellena horas, recarga el saldo de obsequios y registra el
+   cobro del mes nuevo. El precio puede cambiar (aumento, promo), y si cambia
+   queda guardado como el nuevo precio del paquete. */
+export const renovarFijo = async (fijo, cobro) => {
+  const batch = writeBatch(db);
+  batch.update(doc(db, "fijos", fijo.id), {
     horasRestante: fijo.horasTotal,
     obsequiosRestante: copiaObsequios(fijo.obsequios),
     estado: "activo",
     renovado: hoyISO(),
+    ...(cobro && Number(cobro.precio) > 0 ? { precioPaquete: Number(cobro.precio) } : {}),
   });
+  if (cobro && Number(cobro.precio) > 0) {
+    batch.set(doc(collection(db, "cuentas")), cuentaPaquete(fijo, cobro.precio, cobro.formaPago));
+  }
+  await batch.commit();
+};
+
+/* Registra el cobro de un paquete SIN tocar horas ni obsequios. Sirve para
+   cargar a mano un paquete que ya se cobró (por ejemplo, los que existían
+   antes de que el sistema registrara estos ingresos). */
+export const registrarCobroPaquete = async (fijo, precio, formaPago) => {
+  const batch = writeBatch(db);
+  batch.set(doc(collection(db, "cuentas")), cuentaPaquete(fijo, precio, formaPago));
+  await batch.commit();
+};
 
 /* "Vino hoy": abre el turno fijo (cancha prepaga = 0) y descuenta las horas.
    Los obsequios NO se copian al turno: el turno solo se marca como fijo y lee
