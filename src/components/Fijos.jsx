@@ -1,15 +1,16 @@
 import React, { useState } from "react";
-import { Calendar, Check, ChevronRight, Clock, DoorOpen, Gift, Minus, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { Calendar, Check, ChevronRight, Clock, DoorOpen, Gift, Minus, Plus, RefreshCw, Trash2, Wallet, X } from "lucide-react";
 import { S } from "../styles";
-import { BOXES, DIAS, GS, sumarMinutos, textoDuracion } from "../constants";
+import { BOXES, DIAS, GS, PAGOS, sumarMinutos, textoDuracion } from "../constants";
 import { Stepper } from "./ui";
 
 const TAMANOS = [8, 12, 16];
 
-export default function Fijos({ fijos, clientes, productos, esAdmin, onAgregar, onBorrar, onUsar, onRenovar, onActualizar }) {
+export default function Fijos({ fijos, clientes, productos, esAdmin, onAgregar, onBorrar, onUsar, onRenovar, onActualizar, onRegistrarCobro }) {
   const [form, setForm] = useState(false);     // crear nuevo
   const [editar, setEditar] = useState(null);  // paquete a editar
   const [usar, setUsar] = useState(null);       // paquete para "vino hoy"
+  const [cobrar, setCobrar] = useState(null);   // { fijo, renovar } para el modal de cobro
 
   return (
     <div>
@@ -73,7 +74,7 @@ export default function Fijos({ fijos, clientes, productos, esAdmin, onAgregar, 
 
               {completado ? (
                 <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-                  <button style={{ ...S.confirmBtn, flex: 1 }} onClick={() => onRenovar(f)}><RefreshCw size={16} /> Renovar mes</button>
+                  <button style={{ ...S.confirmBtn, flex: 1 }} onClick={() => setCobrar({ fijo: f, renovar: true })}><RefreshCw size={16} /> Renovar mes</button>
                   <button style={{ ...S.saveOpen, flex: "none", paddingLeft: 14, paddingRight: 14, color: "#f0a45b", borderColor: "#f0a45b55" }} onClick={() => confirm(`¿Borrar el paquete de ${f.clienteNombre}?`) && onBorrar(f.id)}><Trash2 size={16} /></button>
                 </div>
               ) : (
@@ -81,6 +82,12 @@ export default function Fijos({ fijos, clientes, productos, esAdmin, onAgregar, 
                   <button style={{ ...S.confirmBtn, flex: 1 }} onClick={() => setUsar(f)}>
                     <DoorOpen size={17} /> Vino hoy — abrir turno
                   </button>
+                  {esAdmin && (
+                    <button style={{ ...S.saveOpen, flex: "none", paddingLeft: 13, paddingRight: 13 }} title="Registrar un cobro de este paquete"
+                      onClick={() => setCobrar({ fijo: f, renovar: false })}>
+                      <Wallet size={16} />
+                    </button>
+                  )}
                   {esAdmin && (
                     <button style={{ ...S.saveOpen, flex: "none", paddingLeft: 14, paddingRight: 14, color: "#f0a45b", borderColor: "#f0a45b55" }}
                       onClick={() => confirm(`¿Borrar el paquete de ${f.clienteNombre}? Esto no se puede deshacer.`) && onBorrar(f.id)}>
@@ -95,12 +102,20 @@ export default function Fijos({ fijos, clientes, productos, esAdmin, onAgregar, 
       </div>
 
       {form && <FijoForm clientes={clientes} productos={productos} onClose={() => setForm(false)}
-        onGuardar={(f) => { onAgregar(f); setForm(false); }} />}
+        onGuardar={(f, cobro) => { onAgregar(f, cobro); setForm(false); }} />}
       {editar && <FijoForm clientes={clientes} productos={productos} inicial={editar} esAdmin={esAdmin} onClose={() => setEditar(null)}
         onGuardar={(f) => { onActualizar(editar.id, f); setEditar(null); }}
         onBorrar={() => { if (confirm("¿Borrar este paquete? Esto no se puede deshacer.")) { onBorrar(editar.id); setEditar(null); } }} />}
       {usar && <UsarFijoModal fijo={usar} onClose={() => setUsar(null)}
         onConfirmar={(horas) => { onUsar(usar, horas); setUsar(null); }} />}
+      {cobrar && (
+        <CobroPaqueteModal fijo={cobrar.fijo} renovar={cobrar.renovar} onClose={() => setCobrar(null)}
+          onConfirmar={async (precio, formaPago) => {
+            if (cobrar.renovar) await onRenovar(cobrar.fijo, { precio, formaPago });
+            else await onRegistrarCobro(cobrar.fijo, precio, formaPago);
+            setCobrar(null);
+          }} />
+      )}
     </div>
   );
 }
@@ -156,6 +171,7 @@ function FijoForm({ clientes, productos, inicial, esAdmin, onClose, onGuardar, o
   const [diaSemana, setDiaSemana] = useState(inicial?.diaSemana || "Jueves");
   const [horaInicio, setHoraInicio] = useState(inicial?.horaInicio || "19:00");
   const [precioPaquete, setPrecioPaquete] = useState(inicial?.precioPaquete || 600000);
+  const [formaPago, setFormaPago] = useState("EFECTIVO");
   const [obsequios, setObsequios] = useState(inicial?.obsequios || []);
   const [show, setShow] = useState(false);
 
@@ -196,7 +212,9 @@ function FijoForm({ clientes, productos, inicial, esAdmin, onClose, onGuardar, o
     if (!esEdicion || recetaOriginal !== recetaNueva) {
       data.obsequiosRestante = obsLimpios.filter((o) => o.cantidad > 0);
     }
-    onGuardar(data);
+    // Al crear se cobra el paquete (siempre se paga adelantado). Al editar NO
+    // se cobra nada: editar es corregir datos, no registrar un pago nuevo.
+    onGuardar(data, esEdicion ? null : { precio: Number(precioPaquete), formaPago });
   };
 
   return (
@@ -273,6 +291,27 @@ function FijoForm({ clientes, productos, inicial, esAdmin, onClose, onGuardar, o
             <label style={S.flabel}>Precio del paquete (por mes)</label>
             <input style={S.fieldInput} type="number" value={precioPaquete} onChange={(e) => setPrecioPaquete(e.target.value)} />
           </div>
+
+          {!esEdicion && (
+            <div style={{ background: "#101c16", border: "1px solid #3fbf8155", borderRadius: 10, padding: "12px 14px" }}>
+              <label style={S.flabel}>¿Cómo pagó el paquete?</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                {Object.entries(PAGOS).map(([k, p]) => {
+                  const Icon = p.icon;
+                  const on = formaPago === k;
+                  return (
+                    <button key={k} onClick={() => setFormaPago(k)}
+                      style={{ ...S.pagoChip, ...(on ? { borderColor: p.color, color: p.color, background: p.color + "1a" } : {}) }}>
+                      <Icon size={15} /> {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p style={{ color: "#8b93a0", fontSize: 12.5, margin: "9px 0 0" }}>
+                Se registra como ingreso del día, y aparece en Caja y en Reportes.
+              </p>
+            </div>
+          )}
 
           <div>
             <label style={S.flabel}>Obsequios del mes (aparecen en el turno al tocar “Vino hoy”)</label>
@@ -355,6 +394,67 @@ function ObsequioPicker({ productos, value, onPick }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/* Modal de cobro del paquete. Se usa para renovar el mes (rellena horas y cobra)
+   y para registrar un cobro suelto sin tocar las horas. */
+function CobroPaqueteModal({ fijo, renovar, onClose, onConfirmar }) {
+  const [precio, setPrecio] = useState(fijo.precioPaquete || 0);
+  const [formaPago, setFormaPago] = useState("EFECTIVO");
+  const [guardando, setGuardando] = useState(false);
+
+  const confirmar = async () => {
+    if (!(Number(precio) > 0)) { alert("Poné el precio del paquete."); return; }
+    setGuardando(true);
+    try { await onConfirmar(Number(precio), formaPago); }
+    catch (e) { console.error(e); alert("No se pudo guardar: " + (e?.message || e)); setGuardando(false); }
+  };
+
+  return (
+    <div style={S.overlay} onClick={onClose}>
+      <div style={{ ...S.modal, width: "min(440px,100%)" }} onClick={(e) => e.stopPropagation()}>
+        <div style={S.modalHead}>
+          <div>
+            <div style={S.modalSub}>{fijo.clienteNombre} · {BOXES.find((b) => b.id === fijo.boxId)?.nombre}</div>
+            <div style={{ fontSize: 19, fontWeight: 800 }}>{renovar ? "Renovar mes y cobrar" : "Registrar cobro del paquete"}</div>
+          </div>
+          <button style={S.iconBtn} onClick={onClose}><X size={20} /></button>
+        </div>
+        <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 15 }}>
+          <div>
+            <label style={S.flabel}>Precio del paquete</label>
+            <input style={S.fieldInput} type="number" value={precio} onChange={(e) => setPrecio(e.target.value)} />
+            <p style={{ color: "#8b93a0", fontSize: 12.5, margin: "7px 0 0" }}>
+              Podés cambiarlo si aumentó o si le hiciste una promo.
+            </p>
+          </div>
+          <div>
+            <label style={S.flabel}>¿Cómo pagó?</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+              {Object.entries(PAGOS).map(([k, p]) => {
+                const Icon = p.icon;
+                const on = formaPago === k;
+                return (
+                  <button key={k} onClick={() => setFormaPago(k)}
+                    style={{ ...S.pagoChip, ...(on ? { borderColor: p.color, color: p.color, background: p.color + "1a" } : {}) }}>
+                    <Icon size={15} /> {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {renovar && (
+            <p style={{ color: "#8b93a0", fontSize: 13, margin: 0, lineHeight: 1.5 }}>
+              Al confirmar se rellenan las <b>{fijo.horasTotal} h</b> del paquete y se vuelven a cargar los obsequios del mes.
+            </p>
+          )}
+          <button style={{ ...S.confirmBtn, width: "100%", flex: "none" }} disabled={guardando} onClick={confirmar}>
+            <Check size={18} /> {guardando ? "Guardando…" : `Cobrar ${GS(Number(precio) || 0)}`}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
