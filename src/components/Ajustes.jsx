@@ -7,10 +7,12 @@ import { guardarConfig } from "../services/varios";
 export default function Ajustes({ config, onClose, esAdmin }) {
   const [vh, setVh] = useState({ ...config.valorHora });
   const [tubo, setTubo] = useState(config.tuboPrecio);
+  const [parrilla, setParrilla] = useState(config.parrillaPrecio || 0);
   const guardar = async () => {
     await guardarConfig({
       valorHora: { box1: Number(vh.box1), box2: Number(vh.box2), box3: Number(vh.box3) },
       tuboPrecio: Number(tubo),
+      parrillaPrecio: Number(parrilla),
     });
     onClose();
   };
@@ -34,6 +36,12 @@ export default function Ajustes({ config, onClose, esAdmin }) {
           <div style={{ ...S.cdLabel, marginTop: 8 }}>El tubo de pelotas cuesta</div>
           <input style={{ ...S.fieldInput, width: 150 }} type="number" disabled={!esAdmin}
             value={tubo} onChange={(e) => setTubo(e.target.value)} />
+          <div style={{ ...S.cdLabel, marginTop: 8 }}>El uso de parrilla cuesta</div>
+          <input style={{ ...S.fieldInput, width: 150 }} type="number" disabled={!esAdmin}
+            value={parrilla} onChange={(e) => setParrilla(e.target.value)} />
+          <p style={{ color: "#8b93a0", fontSize: 12.5, margin: 0 }}>
+            Es el precio que viene puesto por defecto; en cada turno se puede cambiar.
+          </p>
           {esAdmin && (
             <button style={{ ...S.confirmBtn, width: "100%", flex: "none", marginTop: 8 }} onClick={guardar}>
               <Check size={18} /> Guardar
