@@ -93,11 +93,13 @@ export const detectarProblemas = (turnos, cuentas) => {
     const lista = porTurno[t.id] || [];
     const canchaAsig = lista.reduce((s, c) => s + (c.canchaPartes || 0), 0);
     const tuboAsig = lista.reduce((s, c) => s + (c.tuboPartes || 0), 0);
+    const parrillaAsig = lista.reduce((s, c) => s + (c.parrillaPartes || 0), 0);
     const canchaProblema = (t.canchaTotal || 0) > 0 && canchaAsig !== (t.canchaPartes || 0);
     const tuboProblema = !!t.tuboActivo && (t.tuboPrecio || 0) > 0 && tuboAsig !== (t.tuboPartes || 0);
+    const parrillaProblema = !!t.parrillaActiva && (t.parrillaPrecio || 0) > 0 && parrillaAsig !== (t.parrillaPartes || 0);
     const pendiente = lista.filter((c) => c.estado === "abierta").reduce((s, c) => s + totalCuenta(c), 0);
-    if (canchaProblema || tuboProblema || pendiente > 0) {
-      problemas.push({ turnoId: t.id, fecha: t.fecha, boxId: t.boxId, canchaProblema, tuboProblema, pendiente });
+    if (canchaProblema || tuboProblema || parrillaProblema || pendiente > 0) {
+      problemas.push({ turnoId: t.id, fecha: t.fecha, boxId: t.boxId, canchaProblema, tuboProblema, parrillaProblema, pendiente });
     }
   });
   return problemas;
@@ -107,5 +109,5 @@ export const perPart = (total, partes) => (partes > 0 ? total / partes : 0);
 export const calcCargo = (partes, total, partesTotal) =>
   Math.round((partes || 0) * perPart(total, partesTotal));
 export const totalCuenta = (c) =>
-  ((c && c.cargoCancha) || 0) + ((c && c.cargoTubo) || 0) +
+  ((c && c.cargoCancha) || 0) + ((c && c.cargoTubo) || 0) + ((c && c.cargoParrilla) || 0) +
   (((c && c.items) || []).reduce((s, it) => s + ((it && it.precioUnit) || 0) * ((it && it.cantidad) || 0), 0));
