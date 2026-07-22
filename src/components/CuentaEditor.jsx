@@ -123,6 +123,7 @@ export default function CuentaEditor({ cuenta, boxNombre, sinTurno, productos, c
             <div style={S.ticketLines} className="ticketLines">
               {!sinTurno && <div style={S.fixedLine}><span>Su parte de cancha</span><b>{GS(cuenta.cargoCancha)}</b></div>}
               {!sinTurno && (cuenta.cargoTubo > 0 || cuenta.tuboPartes > 0) && <div style={S.fixedLine}><span>Su parte de tubo</span><b>{GS(cuenta.cargoTubo)}</b></div>}
+              {!sinTurno && (cuenta.cargoParrilla > 0 || cuenta.parrillaPartes > 0) && <div style={S.fixedLine}><span>Su parte de parrilla</span><b>{GS(cuenta.cargoParrilla)}</b></div>}
               {!sinTurno && <div style={S.fixedHint}>Las partes se cambian desde la fila del turno</div>}
               {items.length === 0 && <div style={S.ticketEmpty}>Lo que consuma aparece acá.<br />Tocá los productos de la izquierda.</div>}
               {items.map((x) => (
