@@ -10,6 +10,7 @@
 export const CONFIG_INICIAL = {
   valorHora: { box1: 80000, box2: 100000, box3: 100000 },
   tuboPrecio: 80000,
+  parrillaPrecio: 50000,
 };
 
 export const PRODUCTOS_INICIALES = [
