@@ -97,7 +97,7 @@ export const registrarCobroPaquete = async (fijo, precio, formaPago) => {
 /* "Vino hoy": abre el turno fijo (cancha prepaga = 0) y descuenta las horas.
    Los obsequios NO se copian al turno: el turno solo se marca como fijo y lee
    el saldo mensual del paquete (obsequiosRestante). */
-export const usarFijo = async (fijo, horasSesion) => {
+export const usarFijo = async (fijo, horasSesion, config) => {
   const horas = Number(horasSesion) || fijo.horasPorSesion || 1;
   const horaInicio = fijo.horaInicio || "20:00";
   const horaFin = sumarMinutos(horaInicio, Math.round(horas * 60));
@@ -110,6 +110,7 @@ export const usarFijo = async (fijo, horasSesion) => {
     boxId: fijo.boxId, fecha: hoyISO(), horaInicio, horaFin,
     fijoId: fijo.id, canchaTotal: 0, canchaPartes: 1,
     tuboActivo: false, tuboPrecio: 0, tuboPartes: 1, tuboGratis: false,
+    parrillaActiva: false, parrillaPrecio: (config && config.parrillaPrecio) || 0, parrillaPartes: 1,
     creadoTs: Date.now(),
   });
 
