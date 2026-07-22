@@ -38,17 +38,19 @@ export default function Reportes() {
 
   // De dónde salió la plata: cancha, tubos, productos y paquetes fijos por separado.
   const conceptos = useMemo(() => {
-    let cancha = 0, tubo = 0, productos = 0, paquetes = 0;
+    let cancha = 0, tubo = 0, parrilla = 0, productos = 0, paquetes = 0;
     delMes.forEach((c) => {
       if (c.concepto === "paquete") { paquetes += totalCuenta(c); return; }
       cancha += c.cargoCancha || 0;
       tubo += c.cargoTubo || 0;
+      parrilla += c.cargoParrilla || 0;
       productos += (c.items || []).reduce((s, i) => s + (i.precioUnit || 0) * (i.cantidad || 0), 0);
     });
     return [
       { nom: "Alquiler de cancha", monto: cancha, color: "#3fbf81" },
       { nom: "Paquetes de turnos fijos", monto: paquetes, color: "#5ec5e8" },
       { nom: "Tubos de pelotas", monto: tubo, color: "#5b8def" },
+      { nom: "Uso de parrilla", monto: parrilla, color: "#d9542b" },
       { nom: "Productos y consumos", monto: productos, color: "#e8a13c" },
     ].filter((x) => x.monto > 0);
   }, [delMes]);
