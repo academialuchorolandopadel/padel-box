@@ -189,9 +189,9 @@ function Sistema({ perfil }) {
               onNueva={(turno) => setEditing({
                 turnoId: turno.id, boxId: turno.boxId, fecha: turno.fecha,
                 clienteId: null, clienteNombre: "",
-                canchaPartes: 1, tuboPartes: 0,
+                canchaPartes: 1, tuboPartes: 0, parrillaPartes: 0,
                 cargoCancha: Math.round(turno.canchaTotal / turno.canchaPartes) || 0,
-                cargoTubo: 0, items: [], notas: "", estado: "abierta", formaPago: null,
+                cargoTubo: 0, cargoParrilla: 0, items: [], notas: "", estado: "abierta", formaPago: null,
               })}
               onReabrir={svcCuentas.reabrirCuenta}
               onBorrarCuenta={svcCuentas.borrarCuenta}
@@ -205,7 +205,7 @@ function Sistema({ perfil }) {
             onActualizar={svcFijos.actualizarFijo}
             onRenovar={async (f, cobro) => { await svcFijos.renovarFijo(f, cobro); }}
             onRegistrarCobro={async (f, precio, formaPago) => { await svcFijos.registrarCobroPaquete(f, precio, formaPago); }}
-            onUsar={async (f, horas) => { await svcFijos.usarFijo(f, horas); setActiveBox(f.boxId); setTab("canchas"); }} />
+            onUsar={async (f, horas) => { await svcFijos.usarFijo(f, horas, config); setActiveBox(f.boxId); setTab("canchas"); }} />
         )}
         {tab === "clientes" && <Clientes clientes={clientes} onVer={setVerCliente} onCrear={svcClientes.crearCliente} />}
         {tab === "stock" && <Stock productos={productos} onReponer={svcVarios.reponerStock} onCrear={svcVarios.crearProducto} onActualizar={svcVarios.actualizarProducto} onBorrar={svcVarios.borrarProducto} esAdmin={esAdmin} />}
@@ -216,7 +216,7 @@ function Sistema({ perfil }) {
           onNuevaVenta={() => setEditing({
             turnoId: null, boxId: null, fecha: hoy,
             clienteId: null, clienteNombre: "",
-            canchaPartes: 0, tuboPartes: 0, cargoCancha: 0, cargoTubo: 0,
+            canchaPartes: 0, tuboPartes: 0, parrillaPartes: 0, cargoCancha: 0, cargoTubo: 0, cargoParrilla: 0,
             items: [], notas: "", estado: "abierta", formaPago: null,
           })} />}
         {tab === "reportes" && esAdmin && <Reportes />}
@@ -277,7 +277,7 @@ function Sistema({ perfil }) {
       {ajustes && <Ajustes config={config} esAdmin={esAdmin} onClose={() => setAjustes(false)} />}
       {pickFijo && (
         <PickFijo fijos={fijos.filter((f) => f.estado !== "completado" && (f.horasRestante ?? f.horasTotal) > 0)}
-          onUsar={async (f) => { await svcFijos.usarFijo(f, f.horasPorSesion); setActiveBox(f.boxId); setPickFijo(false); }}
+          onUsar={async (f) => { await svcFijos.usarFijo(f, f.horasPorSesion, config); setActiveBox(f.boxId); setPickFijo(false); }}
           onClose={() => setPickFijo(false)} />
       )}
     </div>
