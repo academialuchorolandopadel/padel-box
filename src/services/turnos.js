@@ -11,6 +11,7 @@ export const crearTurno = (boxId, config, origen = "admin", horaInicio = "20:00"
     origen,
     canchaTotal: config.valorHora[boxId], canchaPartes: 1,
     tuboActivo: false, tuboPrecio: config.tuboPrecio, tuboPartes: 1, tuboGratis: false,
+    parrillaActiva: false, parrillaPrecio: config.parrillaPrecio || 0, parrillaPartes: 1,
     creadoTs: Date.now(),
   });
 
@@ -30,6 +31,7 @@ export const actualizarTurno = async (turno, patch, cuentasDelTurno, config) => 
     batch.update(doc(db, "cuentas", c.id), {
       cargoCancha: calcCargo(c.canchaPartes, t.canchaTotal, t.canchaPartes),
       cargoTubo: calcCargo(c.tuboPartes, t.tuboActivo ? t.tuboPrecio : 0, t.tuboPartes),
+      cargoParrilla: calcCargo(c.parrillaPartes, t.parrillaActiva ? t.parrillaPrecio : 0, t.parrillaPartes),
     })
   );
   await batch.commit();
@@ -44,6 +46,12 @@ export const repartirParejo = async (turno, campo, cuentasDelTurno) => {
     cuentasDelTurno.forEach((c) =>
       batch.update(doc(db, "cuentas", c.id), {
         canchaPartes: 1, cargoCancha: calcCargo(1, turno.canchaTotal, n),
+      }));
+  } else if (campo === "parrilla") {
+    batch.update(doc(db, "turnos", turno.id), { parrillaPartes: n });
+    cuentasDelTurno.forEach((c) =>
+      batch.update(doc(db, "cuentas", c.id), {
+        parrillaPartes: 1, cargoParrilla: calcCargo(1, turno.parrillaActiva ? turno.parrillaPrecio : 0, n),
       }));
   } else {
     batch.update(doc(db, "turnos", turno.id), { tuboPartes: n });
