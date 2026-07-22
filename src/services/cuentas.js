@@ -1,5 +1,5 @@
 import {
-  addDoc, collection, deleteDoc, doc, runTransaction, updateDoc,
+  addDoc, collection, doc, runTransaction, updateDoc, writeBatch,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { calcCargo, hoyISO, totalCuenta } from "../constants";
@@ -80,6 +80,13 @@ export const cambiarPartes = (cuenta, campo, delta, turno) => {
       cargoCancha: calcCargo(np, turno.canchaTotal, turno.canchaPartes),
     });
   }
+  if (campo === "parrilla") {
+    const np = Math.max(0, (cuenta.parrillaPartes || 0) + delta);
+    return updateDoc(doc(db, "cuentas", cuenta.id), {
+      parrillaPartes: np,
+      cargoParrilla: calcCargo(np, turno.parrillaActiva ? turno.parrillaPrecio : 0, turno.parrillaPartes),
+    });
+  }
   const np = Math.max(0, (cuenta.tuboPartes || 0) + delta);
   return updateDoc(doc(db, "cuentas", cuenta.id), {
     tuboPartes: np,
@@ -94,5 +101,9 @@ export const reabrirCuenta = (id) =>
 
 export const borrarCuenta = async (id) => {
   if (!id) throw new Error("Falta el id de la cuenta");
-  await deleteDoc(doc(db, "cuentas", String(id)));
+  // Se borra con writeBatch (la misma vía que borrarTurno, que sí funciona
+  // en este entorno) porque deleteDoc suelto falla acá.
+  const batch = writeBatch(db);
+  batch.delete(doc(db, "cuentas", String(id)));
+  await batch.commit();
 };
