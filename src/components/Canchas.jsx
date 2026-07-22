@@ -74,8 +74,10 @@ function TurnoCard({ turno, cuentas, fijos, onUpdTurno, onBorrarTurno, onReparti
   const fijo = esFijo ? fijos.find((f) => f.id === turno.fijoId) : null;
   const canchaAsig = lista.reduce((s, c) => s + (c.canchaPartes || 0), 0);
   const tuboAsig = lista.reduce((s, c) => s + (c.tuboPartes || 0), 0);
+  const parrillaAsig = lista.reduce((s, c) => s + (c.parrillaPartes || 0), 0);
   const canchaOk = canchaAsig === turno.canchaPartes;
   const tuboOk = tuboAsig === turno.tuboPartes;
+  const parrillaOk = parrillaAsig === (turno.parrillaPartes || 1);
   // Estado de cobro: verde si tiene gente y no queda nada pendiente; naranja si no.
   const todoCobrado = jugadores > 0 && pendiente === 0;
   // Los fijos mantienen su marco azul; los eventuales van naranja→verde.
@@ -149,6 +151,23 @@ function TurnoCard({ turno, cuentas, fijos, onUpdTurno, onBorrarTurno, onReparti
             </>
           ))}
         </div>
+        <div style={S.splitRow}>
+          <span style={S.splitLabel}>Parrilla</span>
+          <button style={{ ...S.toggle, ...(turno.parrillaActiva ? S.toggleOn : {}) }} onClick={() => onUpdTurno(turno, { parrillaActiva: !turno.parrillaActiva }, lista)}>
+            {turno.parrillaActiva ? "Con parrilla" : "Sin parrilla"}
+          </button>
+          {turno.parrillaActiva && (
+            <>
+              <input type="number" value={turno.parrillaPrecio || 0} onChange={(e) => onUpdTurno(turno, { parrillaPrecio: Number(e.target.value) }, lista)} style={S.montoInput} />
+              <span style={S.splitWord}>entre</span>
+              <Stepper value={turno.parrillaPartes || 1} onDelta={(d) => onUpdTurno(turno, { parrillaPartes: Math.max(1, (turno.parrillaPartes || 1) + d) }, lista)} />
+              <span style={S.splitPer}>{GS(perPart(turno.parrillaPrecio || 0, turno.parrillaPartes || 1))} c/u</span>
+              <span style={{ ...S.coverTag, ...(parrillaOk ? S.coverOk : S.coverFalta) }}>
+                {parrillaOk ? "✓ repartida" : `falta asignar ${(turno.parrillaPartes || 1) - parrillaAsig}`}
+              </span>
+            </>
+          )}
+        </div>
       </div>
 
       {esFijo && fijo && (fijo.obsequiosRestante || []).length > 0 && (
@@ -185,6 +204,10 @@ function TurnoCard({ turno, cuentas, fijos, onUpdTurno, onBorrarTurno, onReparti
                 {turno.tuboActivo && !turno.tuboGratis && <>
                   <span style={S.partsTag}>Tubo</span>
                   <Stepper small value={c.tuboPartes || 0} onDelta={(d) => onSetPartes(c, "tubo", d, turno)} />
+                </>}
+                {turno.parrillaActiva && <>
+                  <span style={S.partsTag}>Parrilla</span>
+                  <Stepper small value={c.parrillaPartes || 0} onDelta={(d) => onSetPartes(c, "parrilla", d, turno)} />
                 </>}
               </div>
               {abierta ? (
