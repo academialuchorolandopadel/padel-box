@@ -206,6 +206,12 @@ function FijoForm({ clientes, productos, inicial, esAdmin, onClose, onGuardar, o
       precioPaquete: Number(precioPaquete),
       obsequios: obsLimpios,
     };
+    // Si el admin corrige las horas, el estado se ajusta solo: con horas
+    // disponibles vuelve a estar "activo" (aunque estuviera completado), y sin
+    // horas queda "completado". Así devolver horas destraba el paquete.
+    if (esEdicion && esAdmin) {
+      data.estado = data.horasRestante > 0 ? "activo" : "completado";
+    }
     // Si cambió la receta de obsequios (al crear, o al editar la lista), se regenera el saldo del mes.
     const recetaOriginal = JSON.stringify((inicial?.obsequios || []).map((o) => ({ productoId: o.productoId, nombre: o.nombre, cantidad: Number(o.cantidad) })));
     const recetaNueva = JSON.stringify(obsLimpios);
@@ -264,7 +270,7 @@ function FijoForm({ clientes, productos, inicial, esAdmin, onClose, onGuardar, o
                 <span style={{ ...S.horaVal, flex: 1 }}>{textoDuracion(Number(horasRestante))}</span>
                 <button style={S.horaBtn} onClick={() => setHorasRestante((h) => Math.min(Number(horasTotal), Number(h) + 0.5))}><Plus size={14} /></button>
               </div>
-              <p style={{ color: "#8b93a0", fontSize: 12.5, margin: "8px 0 0" }}>Usalo si se descontaron horas por error. Máximo: {horasTotal} h.</p>
+              <p style={{ color: "#8b93a0", fontSize: 12.5, margin: "8px 0 0" }}>Usalo si se descontaron horas por error. Máximo: {horasTotal} h.{inicial?.estado === "completado" ? " Al dejar horas arriba de cero, el paquete vuelve a estar activo." : ""}</p>
             </div>
           )}
 
