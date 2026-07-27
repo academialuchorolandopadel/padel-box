@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { where } from "firebase/firestore";
+import { Download } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from "recharts";
 import { S } from "../styles";
 import {
@@ -7,9 +8,11 @@ import {
   mesISO, primerDiaMes, textoDuracion, totalCuenta, ultimoDiaMes,
 } from "../constants";
 import { useColeccion } from "../hooks/useColeccion";
+import { exportarMes } from "../services/exportar";
 
 export default function Reportes() {
   const [mes, setMes] = useState(mesISO()); // "2026-07"
+  const [exportando, setExportando] = useState(false);
   const inicio = primerDiaMes(mes);
   const fin = ultimoDiaMes(mes);
 
@@ -122,7 +125,17 @@ export default function Reportes() {
     <div>
       <div style={S.pageHead}>
         <h2 style={S.h2}>Reportes</h2>
-        <input type="month" value={mes} max={mesISO()} onChange={(e) => setMes(e.target.value)} style={S.mesInput} />
+        <div style={{ display: "flex", gap: 9, alignItems: "center", flexWrap: "wrap" }}>
+          <input type="month" value={mes} max={mesISO()} onChange={(e) => setMes(e.target.value)} style={S.mesInput} />
+          <button style={S.fijoBtn} disabled={exportando} onClick={async () => {
+            setExportando(true);
+            try { await exportarMes(mes); }
+            catch (e) { console.error(e); alert("No se pudo exportar: " + (e?.message || e)); }
+            setExportando(false);
+          }}>
+            <Download size={16} /> {exportando ? "Generando…" : "Exportar mes"}
+          </button>
+        </div>
       </div>
       <p style={S.pageHint}>Todo lo de {formatMesLindo(mes)}: de dónde salió la plata, cómo se cobró y en qué se gastó.</p>
 
