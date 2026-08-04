@@ -1,25 +1,27 @@
 import React, { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { S } from "../styles";
-import { GASTO_CATS, GS, PAGOS, mesISO } from "../constants";
+import { GASTO_CATS, GS, PAGOS, hoyISO, mesISO } from "../constants";
 
 export default function Gastos({ gastos, onAgregar, onBorrar, esAdmin }) {
   const [desc, setDesc] = useState("");
   const [cat, setCat] = useState("Mercadería");
   const [imp, setImp] = useState("");
   const [fp, setFp] = useState("EFECTIVO");
+  const [fecha, setFecha] = useState(hoyISO());
   const lista = [...gastos].sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
   const totalMes = gastos.filter((g) => g.fecha?.startsWith(mesISO())).reduce((s, g) => s + g.importe, 0);
   const agregar = () => {
     if (!desc.trim() || !imp) return;
-    onAgregar({ descripcion: desc.trim(), categoria: cat, importe: Number(imp), formaPago: fp });
-    setDesc(""); setImp("");
+    onAgregar({ descripcion: desc.trim(), categoria: cat, importe: Number(imp), formaPago: fp, fecha: fecha || hoyISO() });
+    setDesc(""); setImp(""); setFecha(hoyISO());
   };
   return (
     <div>
       <h2 style={S.h2}>Gastos <span style={{ fontSize: 14, color: "#8b93a0", fontWeight: 600, marginLeft: 8 }}>{GS(totalMes)} este mes</span></h2>
       <div style={S.gastoForm}>
         <input placeholder="¿En qué se gastó?" value={desc} onChange={(e) => setDesc(e.target.value)} style={{ ...S.fieldInput, flex: 1, minWidth: 160 }} />
+        <input type="date" value={fecha} max={hoyISO()} onChange={(e) => setFecha(e.target.value)} style={{ ...S.fieldInput, width: 150, colorScheme: "dark" }} title="Fecha del gasto" />
         <select value={cat} onChange={(e) => setCat(e.target.value)} style={S.select}>{GASTO_CATS.map((c) => <option key={c}>{c}</option>)}</select>
         <input placeholder="Cuánto" type="number" value={imp} onChange={(e) => setImp(e.target.value)} style={{ ...S.fieldInput, width: 130 }} />
         <select value={fp} onChange={(e) => setFp(e.target.value)} style={S.select}>{Object.entries(PAGOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select>
