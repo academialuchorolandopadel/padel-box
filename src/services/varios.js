@@ -6,7 +6,7 @@ import { hoyISO } from "../constants";
 
 /* ---- gastos ---- */
 export const crearGasto = (g) =>
-  addDoc(collection(db, "gastos"), { ...g, fecha: hoyISO() });
+  addDoc(collection(db, "gastos"), { ...g, fecha: g.fecha || hoyISO() });
 export const borrarGasto = async (id) => {
   const batch = writeBatch(db);
   batch.delete(doc(db, "gastos", String(id)));
