@@ -24,7 +24,10 @@ export default function Reportes() {
     [where("fecha", ">=", inicio), where("fecha", "<=", fin)],
     [mes]
   );
-  const delMes = useMemo(() => cuentasRango.filter((c) => c.estado === "cerrada"), [cuentasRango]);
+  // Cobros reales del mes = cerradas que NO son fiado (el fiado todavía no es
+  // plata que entró; recién cuenta cuando el cliente paga y cambia la forma de pago).
+  const delMes = useMemo(() => cuentasRango.filter((c) => c.estado === "cerrada" && c.formaPago !== "FIADO"), [cuentasRango]);
+  const fiadoMes = useMemo(() => cuentasRango.filter((c) => c.estado === "cerrada" && c.formaPago === "FIADO").reduce((s, c) => s + totalCuenta(c), 0), [cuentasRango]);
   const { docs: gastosMes } = useColeccion(
     "gastos",
     [where("fecha", ">=", inicio), where("fecha", "<=", fin)],
@@ -140,7 +143,11 @@ export default function Reportes() {
       <p style={S.pageHint}>Todo lo de {formatMesLindo(mes)}: de dónde salió la plata, cómo se cobró y en qué se gastó.</p>
 
       <div style={S.repTop}>
-        <div style={S.repKpi}><div style={S.kpiLabel}>Entró</div><div style={{ ...S.kpiBig, color: "#5fe0a1" }}>{GS(ingMes)}</div></div>
+        <div style={S.repKpi}>
+          <div style={S.kpiLabel}>Entró</div>
+          <div style={{ ...S.kpiBig, color: "#5fe0a1" }}>{GS(ingMes)}</div>
+          {fiadoMes > 0 && <div style={{ fontSize: 12, color: "#f0a45b", marginTop: 4 }}>+ {GS(fiadoMes)} fiado sin cobrar</div>}
+        </div>
         <div style={S.repKpi}><div style={S.kpiLabel}>Salió</div><div style={{ ...S.kpiBig, color: "#f0a45b" }}>{GS(gasMes)}</div></div>
         <div style={S.repKpi}><div style={S.kpiLabel}>Resultado</div><div style={{ ...S.kpiBig, color: ingMes - gasMes >= 0 ? "#5fe0a1" : "#f0a45b" }}>{GS(ingMes - gasMes)}</div></div>
         <div style={S.repKpi}>
