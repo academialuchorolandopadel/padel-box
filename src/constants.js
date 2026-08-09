@@ -1,10 +1,11 @@
-import { Banknote, CreditCard, QrCode, Send, Gift } from "lucide-react";
+import { Banknote, CreditCard, QrCode, Send, Gift, Clock } from "lucide-react";
 
 export const PAGOS = {
   EFECTIVO:      { label: "Efectivo",      icon: Banknote,   color: "#3fbf81" },
   POS:           { label: "POS",           icon: CreditCard, color: "#5b8def" },
   QR:            { label: "QR",            icon: QrCode,     color: "#9b7bff" },
   TRANSFERENCIA: { label: "Transferencia", icon: Send,       color: "#2dd4bf" },
+  FIADO:         { label: "Fiado",         icon: Clock,      color: "#f0a45b", esDeuda: true },
   SIN_CARGO:     { label: "Sin cargo",     icon: Gift,       color: "#9aa0aa" },
 };
 
