@@ -3,16 +3,21 @@ import { Check, ChevronRight, Gift, Phone, Plus, Search, StickyNote, TrendingUp,
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { S } from "../styles";
-import { GS, anioISO, mesISO, totalCuenta } from "../constants";
+import { BOXES, GS, PAGOS, anioISO, mesISO, totalCuenta } from "../constants";
 import { Stepper } from "./ui";
 
-export default function Clientes({ clientes, onVer, onCrear }) {
+export default function Clientes({ clientes, deudaPorCliente = {}, onVer, onCrear }) {
   const [q, setQ] = useState("");
   const [creando, setCreando] = useState(false);
   const [nuevoNombre, setNuevoNombre] = useState("");
   const lista = clientes
     .filter((c) => c.nombre.toLowerCase().includes(q.toLowerCase()))
-    .sort((a, b) => a.nombre.localeCompare(b.nombre));
+    .sort((a, b) => {
+      // Los que deben van primero (de mayor a menor deuda), después el resto por nombre.
+      const da = deudaPorCliente[a.id] || 0, db = deudaPorCliente[b.id] || 0;
+      if (da !== db) return db - da;
+      return a.nombre.localeCompare(b.nombre);
+    });
 
   const crear = async () => {
     const nombre = nuevoNombre.trim();
@@ -33,17 +38,21 @@ export default function Clientes({ clientes, onVer, onCrear }) {
         <input placeholder="Buscar cliente…" value={q} onChange={(e) => setQ(e.target.value)} style={S.searchInput} />
       </div>
       <div style={S.table}>
-        {lista.map((c) => (
+        {lista.map((c) => {
+          const debe = deudaPorCliente[c.id] || 0;
+          return (
           <button key={c.id} style={{ ...S.trow, width: "100%", background: "none", border: "none", borderBottom: "1px solid #191f29", color: "inherit", cursor: "pointer", textAlign: "left" }} onClick={() => onVer(c.id)}>
             <span style={{ flex: 1, fontWeight: 600, fontSize: 15 }}>
               {c.nombre}
+              {debe > 0 && <span style={{ marginLeft: 8, background: "#241510", border: "1px solid #f0a45b66", color: "#f0a45b", borderRadius: 7, padding: "3px 9px", fontSize: 12.5, fontWeight: 800 }}>Debe {GS(debe)}</span>}
               {c.pendientes?.length > 0 && <span style={S.pendBadge}>{c.pendientes.reduce((s, p) => s + p.cantidad, 0)} para retirar</span>}
               {c.notas && <StickyNote size={13} style={{ marginLeft: 6, verticalAlign: -2, color: "#e8a13c" }} />}
             </span>
             <span style={{ width: 140, color: "#8b93a0", fontSize: 13.5 }} className="hide-sm">{c.telefono || "—"}</span>
             <span style={{ width: 26, textAlign: "right" }}><ChevronRight size={17} color="#5a606b" /></span>
           </button>
-        ))}
+          );
+        })}
         {lista.length === 0 && <div style={S.emptyBox}>Sin clientes todavía. Tocá <b style={{ color: "#5fe0a1" }}>Nuevo cliente</b> o cargá una cuenta con un nombre nuevo.</div>}
       </div>
 
@@ -70,13 +79,24 @@ export default function Clientes({ clientes, onVer, onCrear }) {
   );
 }
 
-export function ClienteDetalle({ cliente, onUpd, onClose }) {
+export function ClienteDetalle({ cliente, deudas = [], onUpd, onCobrarDeudas, onClose }) {
   const [nombre, setNombre] = useState(cliente.nombre || "");
   const [notas, setNotas] = useState(cliente.notas || "");
   const [telefono, setTelefono] = useState(cliente.telefono || "");
   const [nuevoPend, setNuevoPend] = useState("");
   const [historial, setHistorial] = useState([]);
   const [cargandoHist, setCargandoHist] = useState(true);
+  const [cobrandoDeuda, setCobrandoDeuda] = useState(false);
+  const [pagoDeuda, setPagoDeuda] = useState("EFECTIVO");
+
+  const totalDeuda = deudas.reduce((s, c) => s + totalCuenta(c), 0);
+  const cobrarDeudas = async () => {
+    if (deudas.length === 0) return;
+    if (!confirm(`¿Cobrar toda la deuda de ${cliente.nombre} (${GS(totalDeuda)}) en ${PAGOS[pagoDeuda]?.label}?`)) return;
+    setCobrandoDeuda(true);
+    try { await onCobrarDeudas(deudas, pagoDeuda); onClose(); }
+    catch (e) { console.error(e); alert("No se pudo cobrar: " + (e?.message || e)); setCobrandoDeuda(false); }
+  };
 
   // Consulta puntual del historial (no suscripción: se lee una vez al abrir la ficha).
   // Traemos por clienteId solamente (una sola condición, sin índice compuesto) y
@@ -135,6 +155,42 @@ export function ClienteDetalle({ cliente, onUpd, onClose }) {
             <div style={S.cdKpi}><div style={S.kpiLabel}>Gastó en {anioISO()}</div><div style={{ ...S.kpiMid, color: "#5fe0a1" }}>{GS(anio)}</div></div>
             <div style={S.cdKpi}><div style={S.kpiLabel}>Veces que vino</div><div style={S.kpiMid}>{historial.length}</div></div>
           </div>
+
+          {deudas.length > 0 && (
+            <div style={{ background: "#241510", border: "1.5px solid #f0a45b66", borderRadius: 12, padding: 15, marginBottom: 18 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+                <div>
+                  <div style={{ color: "#f2b070", fontSize: 12.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 }}>Debe de días anteriores</div>
+                  <div style={{ fontSize: 26, fontWeight: 800, color: "#f0a45b", marginTop: 3 }}>{GS(totalDeuda)}</div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7, alignItems: "flex-end" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "flex-end" }}>
+                    {Object.entries(PAGOS).filter(([k]) => k !== "SIN_CARGO").map(([k, p]) => {
+                      const Icon = p.icon;
+                      const on = pagoDeuda === k;
+                      return (
+                        <button key={k} onClick={() => setPagoDeuda(k)}
+                          style={{ ...S.pagoChip, padding: "7px 11px", minHeight: 0, ...(on ? { borderColor: p.color, color: p.color, background: p.color + "1a" } : {}) }}>
+                          <Icon size={14} /> {p.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button style={{ ...S.confirmBtn, flex: "none" }} disabled={cobrandoDeuda} onClick={cobrarDeudas}>
+                    <Check size={17} /> {cobrandoDeuda ? "Cobrando…" : `Cobrar todo ${GS(totalDeuda)}`}
+                  </button>
+                </div>
+              </div>
+              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
+                {deudas.map((c) => (
+                  <div key={c.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, color: "#d9c3a8", borderTop: "1px solid #3a2a1e", paddingTop: 6 }}>
+                    <span>{c.fecha?.slice(5).split("-").reverse().join("/")} · {BOXES.find((b) => b.id === c.boxId)?.nombre || "—"}</span>
+                    <b>{GS(totalCuenta(c))}</b>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <div style={S.cdGrid} className="cdGrid">
             <div>
               <div style={S.cdLabel}><Phone size={14} /> Teléfono</div>
