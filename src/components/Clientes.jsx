@@ -97,6 +97,13 @@ export function ClienteDetalle({ cliente, deudas = [], onUpd, onCobrarDeudas, on
     try { await onCobrarDeudas(deudas, pagoDeuda); onClose(); }
     catch (e) { console.error(e); alert("No se pudo cobrar: " + (e?.message || e)); setCobrandoDeuda(false); }
   };
+  const cobrarUna = async (c) => {
+    if (!confirm(`¿Cobrar ${GS(totalCuenta(c))} en ${PAGOS[pagoDeuda]?.label}?`)) return;
+    setCobrandoDeuda(true);
+    try { await onCobrarDeudas([c], pagoDeuda); if (deudas.length === 1) onClose(); }
+    catch (e) { console.error(e); alert("No se pudo cobrar: " + (e?.message || e)); }
+    setCobrandoDeuda(false);
+  };
 
   // Consulta puntual del historial (no suscripción: se lee una vez al abrir la ficha).
   // Traemos por clienteId solamente (una sola condición, sin índice compuesto) y
@@ -183,9 +190,13 @@ export function ClienteDetalle({ cliente, deudas = [], onUpd, onCobrarDeudas, on
               </div>
               <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
                 {deudas.map((c) => (
-                  <div key={c.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, color: "#d9c3a8", borderTop: "1px solid #3a2a1e", paddingTop: 6 }}>
-                    <span>{c.fecha?.slice(5).split("-").reverse().join("/")} · {BOXES.find((b) => b.id === c.boxId)?.nombre || "—"}</span>
+                  <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, fontSize: 13.5, color: "#d9c3a8", borderTop: "1px solid #3a2a1e", paddingTop: 6 }}>
+                    <span style={{ flex: 1 }}>{c.fecha?.slice(5).split("-").reverse().join("/")} · {BOXES.find((b) => b.id === c.boxId)?.nombre || (c.concepto === "paquete" ? "Paquete" : "Venta")}</span>
                     <b>{GS(totalCuenta(c))}</b>
+                    <button style={{ ...S.pagoChip, padding: "5px 10px", minHeight: 0, color: "#5fe0a1", borderColor: "#3fbf8155" }}
+                      disabled={cobrandoDeuda} onClick={() => cobrarUna(c)}>
+                      <Check size={13} /> Cobrar
+                    </button>
                   </div>
                 ))}
               </div>
