@@ -107,3 +107,16 @@ export const borrarCuenta = async (id) => {
   batch.delete(doc(db, "cuentas", String(id)));
   await batch.commit();
 };
+
+/* Cobra varias cuentas juntas con una sola forma de pago. Reutiliza guardarCuenta
+   (que ya es transaccional y descuenta stock) una por una: cada cobro queda
+   atómico e independiente, así si una fallara las demás no quedan a medias.
+   Devuelve cuántas se cobraron bien. */
+export const cobrarVarias = async (cuentas, formaPago) => {
+  let ok = 0;
+  for (const c of cuentas) {
+    await guardarCuenta({ ...c, formaPago }, true);
+    ok++;
+  }
+  return ok;
+};
