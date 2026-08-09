@@ -110,6 +110,15 @@ function Sistema({ perfil }) {
 
   const cuentas = useMemo(() => [...abiertas, ...cerradasVista], [abiertas, cerradasVista]);
   const cuentasMes = useMemo(() => [...abiertas, ...cerradasMes], [abiertas, cerradasMes]);
+  // Cuánto debe cada cliente: suma de sus cuentas abiertas de días ANTERIORES a hoy
+  // (una cuenta abierta de hoy es un partido en curso, todavía no es deuda).
+  const deudaPorCliente = useMemo(() => {
+    const m = {};
+    abiertas.forEach((c) => {
+      if (c.clienteId && c.fecha < hoy) m[c.clienteId] = (m[c.clienteId] || 0) + totalCuenta(c);
+    });
+    return m;
+  }, [abiertas, hoy]);
   const problemas = useMemo(() => detectarProblemas(turnosMes, cuentasMes), [turnosMes, cuentasMes]);
 
   const stockBajo = productos.filter((p) => p.categoria !== "Servicio" && p.stockActual <= p.stockMinimo).length;
@@ -207,7 +216,7 @@ function Sistema({ perfil }) {
             onRegistrarCobro={async (f, precio, formaPago) => { await svcFijos.registrarCobroPaquete(f, precio, formaPago); }}
             onUsar={async (f, horas) => { await svcFijos.usarFijo(f, horas, config); setActiveBox(f.boxId); setTab("canchas"); }} />
         )}
-        {tab === "clientes" && <Clientes clientes={clientes} onVer={setVerCliente} onCrear={svcClientes.crearCliente} />}
+        {tab === "clientes" && <Clientes clientes={clientes} deudaPorCliente={deudaPorCliente} onVer={setVerCliente} onCrear={svcClientes.crearCliente} />}
         {tab === "stock" && <Stock productos={productos} onReponer={svcVarios.reponerStock} onCrear={svcVarios.crearProducto} onActualizar={svcVarios.actualizarProducto} onBorrar={svcVarios.borrarProducto} esAdmin={esAdmin} />}
         {tab === "gastos" && <Gastos gastos={gastos} onAgregar={svcVarios.crearGasto} onBorrar={svcVarios.borrarGasto} esAdmin={esAdmin} />}
         {tab === "caja" && <Caja cerradasHoy={cerradasHoy} abiertas={abiertas} gastosHoy={gastos.filter((g) => g.fecha === hoy)} onEdit={setEditing} onBorrarCuenta={svcCuentas.borrarCuenta}
@@ -270,7 +279,9 @@ function Sistema({ perfil }) {
       {verCliente && (
         <ClienteDetalle
           cliente={clientes.find((c) => c.id === verCliente)}
+          deudas={abiertas.filter((c) => c.clienteId === verCliente && c.fecha < hoy)}
           onUpd={svcClientes.actualizarCliente}
+          onCobrarDeudas={svcCuentas.cobrarVarias}
           onClose={() => setVerCliente(null)}
         />
       )}
