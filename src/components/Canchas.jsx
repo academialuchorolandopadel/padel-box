@@ -16,14 +16,19 @@ export default function Canchas(props) {
         {BOXES.map((b) => {
           const abiertas = cuentas.filter((x) => x.boxId === b.id && x.estado === "abierta").length;
           const on = b.id === activeBox;
+          const estiloActivo = on ? { background: b.color + "22", color: "#fff", borderColor: b.color, borderWidth: 2 } : {};
           return (
-            <button key={b.id} onClick={() => setActiveBox(b.id)} style={{ ...S.boxTab, ...(on ? S.boxTabOn : {}) }}>
+            <button key={b.id} onClick={() => setActiveBox(b.id)} style={{ ...S.boxTab, ...estiloActivo }}>
+              <span style={{ width: 11, height: 11, borderRadius: "50%", background: b.color, flexShrink: 0, boxShadow: on ? `0 0 6px ${b.color}` : "none" }} />
               {b.nombre}
               {abiertas > 0 && <span style={S.boxTabCount} title="cuentas sin cobrar">{abiertas}</span>}
             </button>
           );
         })}
       </div>
+
+      {/* Franja de color de la cancha activa, para reforzar de un vistazo dónde estás */}
+      <div style={{ height: 4, borderRadius: 4, marginBottom: 14, background: BOXES.find((b) => b.id === activeBox)?.color || "#3fbf81" }} />
 
       <div style={S.fechaBar}>
         <input type="date" value={fechaVista} max={hoy}
