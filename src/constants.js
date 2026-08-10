@@ -10,9 +10,9 @@ export const PAGOS = {
 };
 
 export const BOXES = [
-  { id: "box1", nombre: "BOX 1" },
-  { id: "box2", nombre: "BOX 2" },
-  { id: "box3", nombre: "BOX 3" },
+  { id: "box1", nombre: "BOX 1", color: "#3fbf81" },
+  { id: "box2", nombre: "BOX 2", color: "#5b8def" },
+  { id: "box3", nombre: "BOX 3", color: "#e0803c" },
 ];
 
 export const CATS = ["Todo", "Bebida", "Cerveza", "Comida", "Servicio"];
